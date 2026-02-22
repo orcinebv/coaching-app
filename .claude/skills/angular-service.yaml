@@ -1,0 +1,31 @@
+name: angular-service
+description: Generate Angular services for API communication and state management
+instructions: |
+  Skill for creating Angular services.
+
+  Service types:
+  1. API Service - HTTP communication with backend
+  2. State Service - Local state management with signals
+  3. Auth Service - Authentication token management
+  4. WebSocket Service - Real-time communication
+
+  API Service pattern:
+  ```typescript
+  @Injectable({ providedIn: 'root' })
+  export class <Name>Service {
+    private http = inject(HttpClient);
+    private apiUrl = environment.apiUrl;
+
+    getAll(): Observable<<Name>[]> {
+      return this.http.get<Name[]>(`${this.apiUrl}/<endpoint>`);
+    }
+  }
+  ```
+
+  Conventions:
+  - providedIn: 'root' for singleton services
+  - Use HttpClient for API calls
+  - Return Observables from API methods
+  - Use Angular signals for state services
+  - Handle errors with catchError operator
+  - Add proper TypeScript types for request/response

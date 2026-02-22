@@ -1,0 +1,237 @@
+name: n8n_workflow_creator
+description: Genereert n8n workflows voor coaching functionaliteit
+version: 1.0.0
+
+triggers:
+  keywords: ["n8n", "workflow", "automatisering", "flow"]
+  intent: "maak workflow"
+
+parameters:
+  - name: name
+    type: string
+    required: true
+    description: "Naam van de workflow"
+  - name: type
+    type: string
+    enum: ["conversation", "checkin", "report", "custom"]
+    description: "Type workflow"
+    default: "conversation"
+
+steps:
+  - type: command
+    command: "mkdir -p n8n/workflows"
+    cwd: "."
+  
+  - type: file
+    path: "n8n/workflows/{{name}}.json"
+    content: |
+      {
+        "name": "Coaching - {{pascalCase name}}",
+        "nodes": [
+          {
+            "parameters": {},
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhookTrigger",
+            "typeVersion": 1,
+            "position": [250, 300]
+          },
+          {
+            "parameters": {
+              "method": "GET",
+              "url": "={{$env.API_URL}}/api/conversations/{{$json.conversationId}}/context?limit=10",
+              "authentication": "genericCredentialType",
+              "genericAuthType": "httpHeaderAuth",
+              "sendHeaders": true,
+              "headerParameters": {
+                "parameters": [
+                  {
+                    "name": "Authorization",
+                    "value": "Bearer {{$env.API_KEY}}"
+                  }
+                ]
+              }
+            },
+            "id": "get-context",
+            "name": "Get Conversation Context",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [450, 300]
+          },
+          {
+            "parameters": {
+              "resource": "chat",
+              "model": "gpt-4",
+              "messages": {
+                "values": [
+                  {
+                    "role": "system",
+                    "content": "Je bent een empathische coach die gebruikers helpt met persoonlijke ontwikkeling. Je reageert warm, ondersteunend en stelt reflectieve vragen."
+                  },
+                  {
+                    "role": "user",
+                    "content": "={{$json.userMessage}}"
+                  }
+                ]
+              },
+              "options": {
+                "temperature": 0.7,
+                "maxTokens": 500
+              }
+            },
+            "id": "ai-coach",
+            "name": "AI Coach",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 2,
+            "position": [650, 300]
+          },
+          {
+            "parameters": {
+              "method": "POST",
+              "url": "={{$env.API_URL}}/api/conversations/{{$json.conversationId}}/messages",
+              "authentication": "genericCredentialType",
+              "genericAuthType": "httpHeaderAuth",
+              "sendBody": true,
+              "bodyParameters": {
+                "parameters": [
+                  {
+                    "name": "role",
+                    "value": "user"
+                  },
+                  {
+                    "name": "content",
+                    "value": "={{$json.userMessage}}"
+                  }
+                ]
+              }
+            },
+            "id": "save-user-message",
+            "name": "Save User Message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [450, 500]
+          },
+          {
+            "parameters": {
+              "method": "POST",
+              "url": "={{$env.API_URL}}/api/conversations/{{$json.conversationId}}/messages",
+              "authentication": "genericCredentialType",
+              "genericAuthType": "httpHeaderAuth",
+              "sendBody": true,
+              "bodyParameters": {
+                "parameters": [
+                  {
+                    "name": "role",
+                    "value": "assistant"
+                  },
+                  {
+                    "name": "content",
+                    "value": "={{$json.coachResponse}}"
+                  }
+                ]
+              }
+            },
+            "id": "save-coach-message",
+            "name": "Save Coach Message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [650, 500]
+          },
+          {
+            "parameters": {
+              "functionCode": "// Detecteer of gebruiker een check-in doet\nconst text = $input.first().json.userMessage;\nconst emojiRegex = /[😊😐😢😠😴]/g;\n\nif (emojiRegex.test(text)) {\n  return {\n    isCheckin: true,\n    mood: text.match(emojiRegex)[0],\n    conversationId: $input.first().json.conversationId,\n    userId: $input.first().json.userId\n  };\n}\n\nreturn { isCheckin: false };"
+            },
+            "id": "detect-checkin",
+            "name": "Detect Check-in",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [450, 700]
+          },
+          {
+            "parameters": {
+              "method": "POST",
+              "url": "={{$env.API_URL}}/api/checkins",
+              "authentication": "genericCredentialType",
+              "genericAuthType": "httpHeaderAuth",
+              "sendBody": true,
+              "bodyParameters": {
+                "parameters": [
+                  {
+                    "name": "userId",
+                    "value": "={{$json.userId}}"
+                  },
+                  {
+                    "name": "conversationId",
+                    "value": "={{$json.conversationId}}"
+                  },
+                  {
+                    "name": "type",
+                    "value": "emoji"
+                  },
+                  {
+                    "name": "value",
+                    "value": "={{$json.mood}}"
+                  }
+                ]
+              }
+            },
+            "id": "save-checkin",
+            "name": "Save Check-in",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [650, 700]
+          },
+          {
+            "parameters": {
+              "responseBody": "={{$json.coachResponse}}",
+              "options": {
+                "response": {
+                  "responseMode": "onReceived"
+                }
+              }
+            },
+            "id": "respond-to-webhook",
+            "name": "Send Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [850, 300]
+          }
+        ]
+      }
+  
+  - type: file
+    path: "n8n/README.md"
+    content: |
+      # n8n Workflows voor Coaching App
+      
+      ## Workflows
+      
+      ### {{name}}.json
+      {{description}}
+      
+      ## Setup
+      
+      1. Importeer workflow in n8n
+      2. Stel environment variables in:
+         - `API_URL`: URL van jullie NestJS API
+         - `API_KEY`: API key voor authenticatie
+         - `OPENAI_API_KEY`: OpenAI API key
+      
+      3. Activeer de workflow
+      
+      ## Webhook URLs
+      
+      - Productie: `https://n8n.jouwdomein.nl/webhook/{{name}}`
+      - Ontwikkeling: `http://localhost:5678/webhook/{{name}}`
+  
+  - type: message
+    content: |
+      ✅ n8n workflow '{{name}}' aangemaakt in n8n/workflows/
+      
+      Om te gebruiken:
+      1. Ga naar n8n (http://localhost:5678)
+      2. Importeer het JSON bestand
+      3. Configureer credentials
+      4. Activeer de workflow
+
+output: "Complete n8n workflow met alle nodes"

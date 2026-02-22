@@ -1,0 +1,136 @@
+name: angular_component_generator
+description: Genereert Angular componenten met alle benodigde bestanden
+version: 1.0.0
+
+triggers:
+  keywords: ["angular", "component", "ui", "frontend"]
+  intent: "maak component"
+
+parameters:
+  - name: name
+    type: string
+    required: true
+    description: "Naam van het component (bijv. chat-widget)"
+  - name: project
+    type: string
+    description: "Project of library"
+    default: "coaching-ui"
+  - name: standalone
+    type: boolean
+    description: "Maak standalone component"
+    default: true
+  - name: export
+    type: boolean
+    description: "Exporteer component"
+    default: true
+
+steps:
+  - type: command
+    command: "nx g @nx/angular:component {{name}} --project={{project}} --standalone={{standalone}} --export={{export}} --style=scss --skipTests=false"
+    cwd: "."
+  
+  - type: file
+    path: "libs/{{project}}/src/lib/{{name}}/{{name}}.component.ts"
+    content: |
+      import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+      import { CommonModule } from '@angular/common';
+      import { FormsModule } from '@angular/forms';
+      
+      export interface {{pascalCase name}}Config {
+        // Define your component config here
+        placeholder?: string;
+        maxLength?: number;
+        disabled?: boolean;
+      }
+      
+      @Component({
+        selector: 'coach-{{name}}',
+        standalone: true,
+        imports: [CommonModule, FormsModule],
+        templateUrl: './{{name}}.component.html',
+        styleUrls: ['./{{name}}.component.scss'],
+        changeDetection: ChangeDetectionStrategy.OnPush
+      })
+      export class {{pascalCase name}}Component implements OnInit, OnDestroy {
+        @Input() config: {{pascalCase name}}Config = {};
+        @Input() value: any;
+        
+        @Output() valueChange = new EventEmitter<any>();
+        @Output() action = new EventEmitter<string>();
+        
+        ngOnInit() {
+          // Initialize component
+        }
+        
+        ngOnDestroy() {
+          // Clean up subscriptions
+        }
+        
+        onValueChange(newValue: any) {
+          this.valueChange.emit(newValue);
+        }
+        
+        onAction(type: string) {
+          this.action.emit(type);
+        }
+      }
+  
+  - type: file
+    path: "libs/{{project}}/src/lib/{{name}}/{{name}}.component.html"
+    content: |
+      <div class="coach-{{name}}">
+        <!-- Component template goes here -->
+        <ng-content></ng-content>
+      </div>
+  
+  - type: file
+    path: "libs/{{project}}/src/lib/{{name}}/{{name}}.component.scss"
+    content: |
+      .coach-{{name}} {
+        display: block;
+        width: 100%;
+        
+        // Add your styles here
+      }
+  
+  - type: file
+    path: "libs/{{project}}/src/lib/{{name}}/{{name}}.component.spec.ts"
+    content: |
+      import { ComponentFixture, TestBed } from '@angular/core/testing';
+      import { {{pascalCase name}}Component } from './{{name}}.component';
+      
+      describe('{{pascalCase name}}Component', () => {
+        let component: {{pascalCase name}}Component;
+        let fixture: ComponentFixture<{{pascalCase name}}Component>;
+        
+        beforeEach(async () => {
+          await TestBed.configureTestingModule({
+            imports: [{{pascalCase name}}Component]
+          }).compileComponents();
+          
+          fixture = TestBed.createComponent({{pascalCase name}}Component);
+          component = fixture.componentInstance;
+          fixture.detectChanges();
+        });
+        
+        it('should create', () => {
+          expect(component).toBeTruthy();
+        });
+        
+        // Add more tests here
+      });
+  
+  - type: command
+    command: "nx test {{project}} --testFile={{name}}"
+    cwd: "."
+    optional: true
+  
+  - type: message
+    content: |
+      ✅ Angular component '{{name}}' aangemaakt in {{project}}!
+      
+      Gebruik: <coach-{{name}} [config]="config" (action)="handleAction($event)"></coach-{{name}}>
+      
+      Volgende stap: implementeer de specifieke functionaliteit
+
+output: "Werkend Angular component met tests"

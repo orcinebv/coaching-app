@@ -1,0 +1,319 @@
+name: angular_pwa_configurator
+description: Configureert Angular PWA met service worker en manifest
+version: 1.0.0
+
+triggers:
+  keywords: ["pwa", "offline", "service worker", "manifest", "installatie"]
+  intent: "maak pwa"
+
+parameters:
+  - name: project
+    type: string
+    description: "Angular project naam"
+    default: "coaching-web"
+
+steps:
+  - type: command
+    command: "cd apps/{{project}} && pnpm add @angular/pwa"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @angular/pwa:ng-add --project={{project}} --target=build"
+    cwd: "."
+  
+  - type: file
+    path: "apps/{{project}}/src/manifest.webmanifest"
+    content: |
+      {
+        "name": "Coaching App",
+        "short_name": "Coach",
+        "description": "Persoonlijke coaching app voor dagelijkse ondersteuning",
+        "theme_color": "#4f46e5",
+        "background_color": "#ffffff",
+        "display": "standalone",
+        "scope": "/",
+        "start_url": "/",
+        "icons": [
+          {
+            "src": "assets/icons/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+          },
+          {
+            "src": "assets/icons/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png"
+          },
+          {
+            "src": "assets/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+          }
+        ]
+      }
+  
+  - type: file
+    path: "apps/{{project}}/src/app/core/services/offline-queue.service.ts"
+    content: |
+      import { Injectable } from '@angular/core';
+      import { HttpClient } from '@angular/common/http';
+      import { Observable, from, of } from 'rxjs';
+      import { switchMap, catchError } from 'rxjs/operators';
+      
+      interface QueuedRequest {
+        id: string;
+        url: string;
+        method: string;
+        data: any;
+        timestamp: number;
+      }
+      
+      @Injectable({
+        providedIn: 'root'
+      })
+      export class OfflineQueueService {
+        private dbName = 'offline-queue';
+        private storeName = 'requests';
+        private db: IDBDatabase | null = null;
+      
+        constructor(private http: HttpClient) {
+          this.initDB();
+          this.setupOnlineListener();
+        }
+      
+        private initDB(): void {
+          const request = indexedDB.open(this.dbName, 1);
+          
+          request.onerror = () => console.error('Failed to open offline queue DB');
+          
+          request.onupgradeneeded = (event) => {
+            const db = (event.target as IDBOpenDBRequest).result;
+            if (!db.objectStoreNames.contains(this.storeName)) {
+              db.createObjectStore(this.storeName, { keyPath: 'id' });
+            }
+          };
+          
+          request.onsuccess = (event) => {
+            this.db = (event.target as IDBOpenDBRequest).result;
+          };
+        }
+      
+        private setupOnlineListener(): void {
+          window.addEventListener('online', () => {
+            this.processQueue();
+          });
+        }
+      
+        queueRequest(url: string, method: string, data: any): void {
+          if (!this.db) {
+            console.error('Queue not initialized');
+            return;
+          }
+      
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          
+          const request: QueuedRequest = {
+            id: crypto.randomUUID(),
+            url,
+            method,
+            data,
+            timestamp: Date.now()
+          };
+          
+          store.add(request);
+          console.log('Request queued for offline', request);
+        }
+      
+        processQueue(): void {
+          if (!this.db || !navigator.onLine) return;
+      
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          const getAllRequest = store.getAll();
+      
+          getAllRequest.onsuccess = () => {
+            const requests = getAllRequest.result as QueuedRequest[];
+            
+            requests.forEach(request => {
+              this.sendRequest(request).subscribe({
+                next: () => this.removeFromQueue(request.id),
+                error: (error) => console.error('Failed to send queued request', error)
+              });
+            });
+          };
+        }
+      
+        private sendRequest(request: QueuedRequest): Observable<any> {
+          switch (request.method.toUpperCase()) {
+            case 'POST':
+              return this.http.post(request.url, request.data);
+            case 'PUT':
+              return this.http.put(request.url, request.data);
+            case 'PATCH':
+              return this.http.patch(request.url, request.data);
+            case 'DELETE':
+              return this.http.delete(request.url);
+            default:
+              return of(null);
+          }
+        }
+      
+        private removeFromQueue(id: string): void {
+          if (!this.db) return;
+          
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          store.delete(id);
+        }
+      
+        getQueueSize(): Promise<number> {
+          return new Promise((resolve) => {
+            if (!this.db) {
+              resolve(0);
+              return;
+            }
+      
+            const transaction = this.db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            const countRequest = store.count();
+            
+            countRequest.onsuccess = () => resolve(countRequest.result);
+            countRequest.onerror = () => resolve(0);
+          });
+        }
+      }
+  
+  - type: file
+    path: "apps/{{project}}/src/app/core/interceptors/offline.interceptor.ts"
+    content: |
+      import { Injectable } from '@angular/core';
+      import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpResponse } from '@angular/common/http';
+      import { Observable, of } from 'rxjs';
+      import { OfflineQueueService } from '../services/offline-queue.service';
+      
+      @Injectable()
+      export class OfflineInterceptor implements HttpInterceptor {
+        constructor(private queueService: OfflineQueueService) {}
+      
+        intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+          // Alleen POST, PUT, PATCH, DELETE requests queuen bij offline
+          if (!navigator.onLine && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+            this.queueService.queueRequest(req.url, req.method, req.body);
+            
+            return of(new HttpResponse({
+              status: 202,
+              statusText: 'Accepted',
+              body: { message: 'Request queued for offline processing' }
+            }));
+          }
+      
+          return next.handle(req);
+        }
+      }
+  
+  - type: file
+    path: "apps/{{project}}/src/app/app.config.ts"
+    content: |
+      import { ApplicationConfig, isDevMode } from '@angular/core';
+      import { provideRouter } from '@angular/router';
+      import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+      import { provideServiceWorker } from '@angular/service-worker';
+      import { routes } from './app.routes';
+      import { OfflineInterceptor } from './core/interceptors/offline.interceptor';
+      
+      export const appConfig: ApplicationConfig = {
+        providers: [
+          provideRouter(routes),
+          provideHttpClient(withInterceptorsFromDi()),
+          {
+            provide: HTTP_INTERCEPTORS,
+            useClass: OfflineInterceptor,
+            multi: true
+          },
+          provideServiceWorker('ngsw-worker.js', {
+            enabled: !isDevMode(),
+            registrationStrategy: 'registerWhenStable:30000'
+          })
+        ]
+      };
+  
+  - type: file
+    path: "apps/{{project}}/src/app/core/services/update.service.ts"
+    content: |
+      import { Injectable } from '@angular/core';
+      import { SwUpdate } from '@angular/service-worker';
+      import { interval } from 'rxjs';
+      
+      @Injectable({
+        providedIn: 'root'
+      })
+      export class UpdateService {
+        constructor(private swUpdate: SwUpdate) {
+          if (this.swUpdate.isEnabled) {
+            // Check voor updates elke 6 uur
+            interval(6 * 60 * 60 * 1000).subscribe(() => {
+              this.checkForUpdate();
+            });
+          }
+        }
+      
+        checkForUpdate(): void {
+          this.swUpdate.checkForUpdate().then(() => {
+            console.log('Checked for updates');
+          });
+        }
+      
+        activateUpdate(): void {
+          this.swUpdate.activateUpdate().then(() => {
+            document.location.reload();
+          });
+        }
+      }
+  
+  - type: command
+    command: "nx build {{project}} --configuration=production"
+    cwd: "."
+    optional: true
+  
+  - type: message
+    content: |
+      ✅ PWA configuratie compleet voor {{project}}!
+      
+      Features:
+      - Service worker voor offline caching
+      - Manifest voor installatie
+      - Offline queue voor berichten
+      - Update notificaties
+      
+      Test met:
+      nx build {{project}} --configuration=production
+      npx http-server dist/apps/{{project}}
+
+output: "Complete PWA configuratie met offline support"

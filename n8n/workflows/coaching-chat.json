@@ -1,0 +1,164 @@
+{
+  "name": "Coaching Chat - AI Response",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coaching-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Je bent een empathische en professionele coach. Je helpt gebruikers met persoonlijke ontwikkeling, doelen stellen, motivatie en welzijn. Geef concrete, bruikbare adviezen. Reageer in het Nederlands tenzij de gebruiker een andere taal gebruikt. Wees warm maar professioneel. Stel verdiepende vragen om de gebruiker te helpen reflecteren."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "id": "openai-chat",
+      "name": "OpenAI Chat",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.2,
+      "position": [500, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/ai-response",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "conversationId",
+              "value": "={{ $('Webhook').item.json.body.conversationId }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.message.content }}"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-to-backend",
+      "name": "Send to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'AI response sent' }) }}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "userMessage",
+              "value": "={{ $json.body.message }}"
+            },
+            {
+              "name": "conversationHistory",
+              "value": "={{ $json.body.history }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-message",
+      "name": "Prepare Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Message": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat": {
+      "main": [
+        [
+          {
+            "node": "Send to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Backend": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "coaching",
+      "id": "1"
+    }
+  ]
+}

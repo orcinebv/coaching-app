@@ -1,0 +1,267 @@
+{
+  "name": "Weekly Report Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtDay": 0,
+              "triggerAtHour": 18,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "weekly-trigger",
+      "name": "Every Sunday at 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://backend:3000/webhooks/weekly-report/users",
+        "options": {}
+      },
+      "id": "get-users",
+      "name": "Get All Users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "users",
+        "options": {}
+      },
+      "id": "split-users",
+      "name": "Split Users",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://backend:3000/webhooks/weekly-report/checkins/{{ $json.id }}",
+        "options": {}
+      },
+      "id": "get-checkins",
+      "name": "Get Weekly Check-ins",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.checkIns.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "has-checkins",
+      "name": "Has Check-ins?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Je bent een coaching assistent die wekelijkse rapporten maakt. Analyseer de check-in data en geef een samenvatting met:\n1. Overzicht van stemming en energie trends\n2. Opvallende patronen\n3. Positieve punten\n4. Aandachtspunten\n5. Concrete suggesties voor de komende week\n\nWees bemoedigend maar eerlijk. Schrijf in het Nederlands."
+            },
+            {
+              "role": "user",
+              "content": "=Hier zijn de check-in gegevens van deze week voor {{ $json.userName }}:\n\n{{ JSON.stringify($json.checkIns, null, 2) }}\n\nMaak een wekelijks coachingsrapport."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1500
+        }
+      },
+      "id": "generate-report",
+      "name": "Generate AI Report",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.2,
+      "position": [1250, 250],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/weekly-report",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $('Get Weekly Check-ins').item.json.userId }}"
+            },
+            {
+              "name": "report",
+              "value": "={{ $json.message.content }}"
+            },
+            {
+              "name": "weekStartDate",
+              "value": "={{ $now.minus({days: 7}).toISO() }}"
+            },
+            {
+              "name": "weekEndDate",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-report",
+      "name": "Send Report to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/send-notification",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "weekly-report"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Get Weekly Check-ins').item.json.userId }}"
+            },
+            {
+              "name": "report",
+              "value": "={{ { summary: $('Generate AI Report').item.json.message.content, checkInCount: $('Get Weekly Check-ins').item.json.checkIns.length } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-email-report",
+      "name": "Send Email Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 380]
+    },
+    {
+      "parameters": {},
+      "id": "no-checkins",
+      "name": "No Check-ins This Week",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "Every Sunday at 18:00": {
+      "main": [
+        [
+          {
+            "node": "Get All Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Users": {
+      "main": [
+        [
+          {
+            "node": "Split Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Users": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Check-ins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Check-ins": {
+      "main": [
+        [
+          {
+            "node": "Has Check-ins?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Check-ins?": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Check-ins This Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report to Backend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "coaching",
+      "id": "1"
+    }
+  ]
+}

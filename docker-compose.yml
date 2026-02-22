@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: coaching-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coaching}
+      POSTGRES_USER: ${POSTGRES_USER:-coaching}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coaching123}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-coaching}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: coaching-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    container_name: coaching-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-coaching}:${POSTGRES_PASSWORD:-coaching123}@postgres:5432/${POSTGRES_DB:-coaching}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey}
+      PORT: 3000
+      FRONTEND_URL: http://localhost:4200
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+      - /app/.nx
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "npx nx build api --configuration=development && npx prisma generate --schema=prisma/schema.prisma && node dist/apps/api/main.js"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: development
+    container_name: coaching-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+      - /app/.nx
+    depends_on:
+      - backend
+    command: npx nx serve web --host 0.0.0.0
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: coaching-n8n
+    restart: unless-stopped
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-admin123}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://n8n:5678/
+      GENERIC_TIMEZONE: Europe/Amsterdam
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-coaching}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-coaching}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-coaching123}
+      N8N_METRICS: "true"
+      EXECUTIONS_DATA_SAVE_ON_ERROR: all
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: all
+      EXECUTIONS_DATA_SAVE_ON_PROGRESS: "true"
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "true"
+      N8N_LOG_LEVEL: info
+      N8N_LOG_OUTPUT: console
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - n8n_backup:/backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: coaching-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - backend
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: coaching-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
+  n8n_backup:
+  prometheus_data:
+  grafana_data:

@@ -1,0 +1,31 @@
+name: nestjs-websocket
+description: WebSocket gateway setup with Socket.io for real-time features
+instructions: |
+  Skill for implementing WebSocket functionality in the NestJS API.
+
+  Tech: Socket.io with @nestjs/websockets
+
+  Components:
+  - WebSocket Gateway class with @WebSocketGateway()
+  - Event handlers with @SubscribeMessage()
+  - WsJwtGuard for authenticated WebSocket connections
+  - WebSocket adapter configuration
+
+  Use cases for coaching-app:
+  - Real-time chat between coach and client
+  - Live session notifications
+  - Session status updates
+  - Typing indicators
+  - Online presence tracking
+
+  Implementation pattern:
+  1. Create gateway: <feature>.gateway.ts
+  2. Define events and payloads
+  3. Handle connection/disconnection
+  4. Authenticate with JWT on handshake
+  5. Use rooms for private conversations
+  6. Emit events from services using gateway reference
+
+  CORS configuration:
+  - Configure allowed origins in gateway decorator
+  - Match with Angular app URL

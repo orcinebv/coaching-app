@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: coaching-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+    container_name: coaching-backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+      FRONTEND_URL: ${FRONTEND_URL}
+      N8N_WEBHOOK_URL: http://n8n:5678
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: coaching-n8n
+    restart: always
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      GENERIC_TIMEZONE: Europe/Amsterdam
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:alpine
+    container_name: coaching-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - internal
+      - external
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: production
+    container_name: coaching-frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge

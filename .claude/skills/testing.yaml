@@ -1,0 +1,442 @@
+name: testing_suite_generator
+description: Genereert complete test suites voor backend en frontend
+version: 1.0.0
+
+triggers:
+  keywords: ["test", "testing", "unit", "e2e", "coverage"]
+  intent: "testen"
+
+steps:
+  - type: file
+    path: "apps/coaching-api/src/app/chat/chat.service.spec.ts"
+    content: |
+      import { Test, TestingModule } from '@nestjs/testing';
+      import { ChatService } from './chat.service';
+      import { PrismaService } from '@coaching-app/data-access';
+      import { ConfigService } from '@nestjs/config';
+      import { HttpService } from '@nestjs/axios';
+      import { of } from 'rxjs';
+      
+      describe('ChatService', () => {
+        let service: ChatService;
+        let prismaService: PrismaService;
+        let httpService: HttpService;
+      
+        const mockPrismaService = {
+          conversation: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          },
+          message: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+          },
+        };
+      
+        const mockHttpService = {
+          post: jest.fn().mockReturnValue(of({ data: { message: 'Test response' } })),
+        };
+      
+        beforeEach(async () => {
+          const module: TestingModule = await Test.createTestingModule({
+            providers: [
+              ChatService,
+              { provide: PrismaService, useValue: mockPrismaService },
+              { provide: HttpService, useValue: mockHttpService },
+              ConfigService,
+            ],
+          }).compile();
+      
+          service = module.get<ChatService>(ChatService);
+          prismaService = module.get<PrismaService>(PrismaService);
+          httpService = module.get<HttpService>(HttpService);
+        });
+      
+        it('should be defined', () => {
+          expect(service).toBeDefined();
+        });
+      
+        describe('processMessage', () => {
+          it('should create a new conversation if none exists', async () => {
+            const userId = 'user-123';
+            const message = 'Hello coach';
+      
+            mockPrismaService.conversation.findUnique.mockResolvedValue(null);
+            mockPrismaService.conversation.create.mockResolvedValue({
+              id: 'conv-123',
+              userId,
+              status: 'active',
+            });
+      
+            const result = await service.processMessage({
+              userId,
+              message,
+              sessionId: 'session-123',
+            });
+      
+            expect(mockPrismaService.conversation.create).toHaveBeenCalled();
+            expect(mockHttpService.post).toHaveBeenCalled();
+            expect(result).toHaveProperty('message');
+          });
+      
+          it('should use existing conversation', async () => {
+            const userId = 'user-123';
+            const message = 'Hello again';
+      
+            mockPrismaService.conversation.findUnique.mockResolvedValue({
+              id: 'conv-123',
+              userId,
+              status: 'active',
+            });
+      
+            const result = await service.processMessage({
+              userId,
+              message,
+              conversationId: 'conv-123',
+            });
+      
+            expect(mockPrismaService.conversation.create).not.toHaveBeenCalled();
+            expect(mockHttpService.post).toHaveBeenCalled();
+          });
+      
+          it('should handle errors gracefully', async () => {
+            mockPrismaService.conversation.findUnique.mockRejectedValue(
+              new Error('Database error')
+            );
+      
+            await expect(
+              service.processMessage({
+                userId: 'user-123',
+                message: 'Hello',
+              })
+            ).rejects.toThrow('Database error');
+          });
+        });
+      });
+  
+  - type: file
+    path: "apps/coaching-web/src/app/features/chat/chat.service.spec.ts"
+    content: |
+      import { TestBed } from '@angular/core/testing';
+      import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+      import { ChatService } from './chat.service';
+      
+      describe('ChatService', () => {
+        let service: ChatService;
+        let httpMock: HttpTestingController;
+      
+        beforeEach(() => {
+          TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [ChatService],
+          });
+      
+          service = TestBed.inject(ChatService);
+          httpMock = TestBed.inject(HttpTestingController);
+        });
+      
+        afterEach(() => {
+          httpMock.verify();
+        });
+      
+        it('should be created', () => {
+          expect(service).toBeTruthy();
+        });
+      
+        describe('sendMessage', () => {
+          it('should send message to API and update messages stream', (done) => {
+            const testMessage = 'Hello coach';
+            const mockResponse = {
+              id: 'msg-123',
+              message: 'How can I help you today?',
+              role: 'assistant',
+              timestamp: new Date(),
+            };
+      
+            service.sendMessage(testMessage).subscribe((response) => {
+              expect(response.message).toBe(mockResponse.message);
+              done();
+            });
+      
+            // Check if user message was added to stream
+            service.messages$.subscribe((messages) => {
+              if (messages.length > 0) {
+                expect(messages[0].text).toBe(testMessage);
+                expect(messages[0].type).toBe('user');
+              }
+            });
+      
+            const req = httpMock.expectOne('/api/chat');
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body.message).toBe(testMessage);
+            req.flush(mockResponse);
+          });
+      
+          it('should handle error responses', (done) => {
+            service.sendMessage('Hello').subscribe({
+              error: (error) => {
+                expect(error.status).toBe(500);
+                done();
+              },
+            });
+      
+            const req = httpMock.expectOne('/api/chat');
+            req.flush('Server error', {
+              status: 500,
+              statusText: 'Internal Server Error',
+            });
+          });
+        });
+      });
+  
+  - type: file
+    path: "apps/coaching-web/src/app/shared/emoji-picker/emoji-picker.component.spec.ts"
+    content: |
+      import { ComponentFixture, TestBed } from '@angular/core/testing';
+      import { EmojiPickerComponent } from './emoji-picker.component';
+      import { By } from '@angular/platform-browser';
+      
+      describe('EmojiPickerComponent', () => {
+        let component: EmojiPickerComponent;
+        let fixture: ComponentFixture<EmojiPickerComponent>;
+      
+        beforeEach(async () => {
+          await TestBed.configureTestingModule({
+            imports: [EmojiPickerComponent],
+          }).compileComponents();
+      
+          fixture = TestBed.createComponent(EmojiPickerComponent);
+          component = fixture.componentInstance;
+          fixture.detectChanges();
+        });
+      
+        it('should create', () => {
+          expect(component).toBeTruthy();
+        });
+      
+        it('should display 5 emoji buttons', () => {
+          const buttons = fixture.debugElement.queryAll(By.css('button'));
+          expect(buttons.length).toBe(5);
+        });
+      
+        it('should emit selected emoji when clicked', () => {
+          spyOn(component.select, 'emit');
+          
+          const buttons = fixture.debugElement.queryAll(By.css('button'));
+          buttons[0].nativeElement.click();
+          
+          expect(component.select.emit).toHaveBeenCalledWith('😊');
+        });
+      
+        it('should have correct emojis in order', () => {
+          const expectedEmojis = ['😊', '😐', '😢', '😠', '😴'];
+          
+          const buttons = fixture.debugElement.queryAll(By.css('button'));
+          buttons.forEach((button, index) => {
+            expect(button.nativeElement.textContent).toBe(expectedEmojis[index]);
+          });
+        });
+      });
+  
+  - type: file
+    path: "e2e/coaching-web-e2e/cypress/e2e/chat.cy.ts"
+    content: |
+      describe('Chat Feature', () => {
+        beforeEach(() => {
+          cy.visit('/');
+          
+          // Mock API responses
+          cy.intercept('POST', '/api/chat', {
+            statusCode: 200,
+            body: {
+              message: 'Hello! How are you feeling today?',
+            },
+          }).as('sendMessage');
+        });
+      
+        it('should send message and receive response', () => {
+          // Open chat widget
+          cy.get('app-chat-widget button').click();
+          
+          // Type message
+          cy.get('input[placeholder*="Typ"]').type('Hello coach{enter}');
+          
+          // Check if message appears
+          cy.get('.messages .user').should('contain', 'Hello coach');
+          
+          // Wait for response
+          cy.wait('@sendMessage');
+          cy.get('.messages .bot').should('contain', 'Hello! How are you');
+        });
+      
+        it('should handle emoji check-in', () => {
+          cy.get('app-chat-widget button').click();
+          
+          // Click emoji
+          cy.get('coach-emoji-picker button').first().click();
+          
+          // Check if emoji appears in chat
+          cy.get('.messages .user').should('contain', '😊');
+          
+          // Mock check-in API
+          cy.intercept('POST', '/api/checkins', {
+            statusCode: 201,
+          }).as('saveCheckin');
+          
+          cy.wait('@saveCheckin');
+        });
+      
+        it('should work offline', () => {
+          // Go offline
+          cy.window().then((win) => {
+            cy.stub(win.navigator, 'onLine').value(false);
+          });
+          
+          cy.get('app-chat-widget button').click();
+          cy.get('input[placeholder*="Typ"]').type('Message while offline{enter}');
+          
+          // Should show queued message
+          cy.get('.messages .user').should('contain', 'Message while offline');
+          
+          // Go online
+          cy.window().then((win) => {
+            win.dispatchEvent(new Event('online'));
+          });
+          
+          // Should sync
+          cy.wait('@sendMessage');
+        });
+      });
+  
+  - type: file
+    path: "e2e/coaching-api-e2e/src/api/api.spec.ts"
+    content: |
+      import axios from 'axios';
+      
+      describe('Coaching API', () => {
+        const apiUrl = process.env.API_URL || 'http://localhost:3333/api';
+        let authToken: string;
+        let userId: string;
+      
+        beforeAll(async () => {
+          // Register test user
+          const registerResponse = await axios.post(`${apiUrl}/auth/register`, {
+            phone: '+31612345678',
+          });
+          
+          // Login
+          const loginResponse = await axios.post(`${apiUrl}/auth/login`, {
+            phone: '+31612345678',
+            code: '123456',
+          });
+          
+          authToken = loginResponse.data.accessToken;
+          userId = loginResponse.data.userId;
+        });
+      
+        describe('Auth', () => {
+          it('should register new user', async () => {
+            const response = await axios.post(`${apiUrl}/auth/register`, {
+              phone: '+31687654321',
+              name: 'Test User',
+            });
+      
+            expect(response.status).toBe(200);
+            expect(response.data.message).toContain('Verification code sent');
+          });
+      
+          it('should login with valid code', async () => {
+            const response = await axios.post(`${apiUrl}/auth/login`, {
+              phone: '+31612345678',
+              code: '123456',
+            });
+      
+            expect(response.status).toBe(200);
+            expect(response.data).toHaveProperty('accessToken');
+            expect(response.data).toHaveProperty('refreshToken');
+            expect(response.data.userId).toBe(userId);
+          });
+        });
+      
+        describe('Chat', () => {
+          it('should send message and get response', async () => {
+            const response = await axios.post(
+              `${apiUrl}/chat`,
+              {
+                message: 'Hello coach',
+                userId,
+              },
+              {
+                headers: { Authorization: `Bearer ${authToken}` },
+              }
+            );
+      
+            expect(response.status).toBe(200);
+            expect(response.data).toHaveProperty('message');
+          });
+        });
+      
+        describe('CheckIns', () => {
+          it('should create check-in', async () => {
+            const response = await axios.post(
+              `${apiUrl}/checkins`,
+              {
+                userId,
+                type: 'emoji',
+                value: '😊',
+              },
+              {
+                headers: { Authorization: `Bearer ${authToken}` },
+              }
+            );
+      
+            expect(response.status).toBe(201);
+            expect(response.data).toHaveProperty('id');
+          });
+      
+          it('should get user check-ins', async () => {
+            const response = await axios.get(
+              `${apiUrl}/checkins?userId=${userId}`,
+              {
+                headers: { Authorization: `Bearer ${authToken}` },
+              }
+            );
+      
+            expect(response.status).toBe(200);
+            expect(response.data).toHaveProperty('items');
+          });
+        });
+      });
+  
+  - type: file
+    path: "package.json" 
+    content: |
+      {
+        "scripts": {
+          "test": "nx run-many --target=test --all",
+          "test:api": "nx test coaching-api",
+          "test:web": "nx test coaching-web",
+          "test:e2e": "nx run-many --target=e2e --all",
+          "test:coverage": "nx run-many --target=test --all --coverage",
+          "test:watch": "nx test coaching-api --watch"
+        }
+      }
+  
+  - type: message
+    content: |
+      ✅ Test suites gegenereerd!
+      
+      Tests beschikbaar:
+      - Backend unit tests (Jest)
+      - Frontend unit tests (Jasmine)
+      - E2E tests (Cypress voor web, Supertest voor API)
+      
+      Commando's:
+      pnpm test           # Alle tests
+      pnpm test:api       # Alleen backend
+      pnpm test:web       # Alleen frontend
+      pnpm test:e2e       # E2E tests
+      pnpm test:coverage  # Met coverage rapport
+
+output: "Complete test suites voor alle onderdelen"

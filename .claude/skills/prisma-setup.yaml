@@ -1,0 +1,215 @@
+name: prisma_database_setup
+description: Configureert Prisma met complete modellen voor coaching-app
+version: 1.0.0
+
+triggers:
+  keywords: ["database", "prisma", "schema", "postgres", "model"]
+  intent: "data opslag"
+
+steps:
+  - type: command
+    command: "mkdir -p libs/data-access"
+    cwd: "."
+  
+  - type: command
+    command: "cd libs/data-access && pnpm add -D prisma @prisma/client && pnpm add @prisma/client"
+    cwd: "."
+  
+  - type: command
+    command: "cd libs/data-access && npx prisma init"
+    cwd: "."
+  
+  - type: file
+    path: "libs/data-access/prisma/schema.prisma"
+    content: |
+      // This is your Prisma schema file
+      generator client {
+        provider = "prisma-client-js"
+      }
+      
+      datasource db {
+        provider = "postgresql"
+        url      = env("DATABASE_URL")
+      }
+      
+      // User model - core user data
+      model User {
+        id        String   @id @default(cuid())
+        phone     String   @unique
+        name      String?
+        email     String?  @unique
+        createdAt DateTime @default(now())
+        updatedAt DateTime @updatedAt
+      
+        conversations Conversation[]
+        checkIns      CheckIn[]
+        settings      CoachingSettings?
+        sessions      Session[]
+      }
+      
+      // Session - for tracking conversations
+      model Session {
+        id         String   @id @default(cuid())
+        userId     String
+        user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+        context    Json?    // Current conversation context
+        expiresAt  DateTime
+        createdAt  DateTime @default(now())
+        updatedAt  DateTime @updatedAt
+      
+        messages Message[]
+      }
+      
+      // Conversation - a complete coaching conversation
+      model Conversation {
+        id         String   @id @default(cuid())
+        userId     String
+        user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+        sessionId  String?
+        status     String   @default("active") // active, paused, completed
+        summary    String?  @db.Text
+        metadata   Json?    // Additional data (sentiment, topics, etc)
+        startedAt  DateTime @default(now())
+        endedAt    DateTime?
+        createdAt  DateTime @default(now())
+        updatedAt  DateTime @updatedAt
+      
+        messages Message[]
+        checkIns CheckIn[]
+      }
+      
+      // Message - individual messages in a conversation
+      model Message {
+        id             String       @id @default(cuid())
+        conversationId String
+        conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+        role           String       // 'user', 'assistant', 'system'
+        content        String       @db.Text
+        metadata       Json?        // sentiment, intent, entities
+        createdAt      DateTime     @default(now())
+      
+        @@index([conversationId])
+        @@index([createdAt])
+      }
+      
+      // CheckIn - daily mood/wellness check-ins
+      model CheckIn {
+        id             String       @id @default(cuid())
+        userId         String
+        user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+        conversationId String?
+        conversation   Conversation? @relation(fields: [conversationId], references: [id])
+        type           String       // 'emoji', 'text', 'voice'
+        value          String       // the actual check-in value (😊 or text)
+        metadata       Json?        // additional context
+        createdAt      DateTime     @default(now())
+      
+        @@index([userId])
+        @@index([createdAt])
+      }
+      
+      // CoachingSettings - user preferences for coaching
+      model CoachingSettings {
+        userId        String   @id
+        user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+        checkinTime   String?  // '09:00' for daily check-ins
+        coachingStyle String?  // 'supportive', 'challenging', 'analytical'
+        customPrompt  String?  @db.Text // custom system prompt
+        n8nWorkflowId String?  // which n8n workflow to use
+        goals         Json?    // user's personal goals
+        createdAt     DateTime @default(now())
+        updatedAt     DateTime @updatedAt
+      }
+      
+      // N8nData - store data from n8n workflows
+      model N8nData {
+        workflowId String
+        dataType   String   // 'conversation_summary', 'sentiment', 'action_items'
+        payload    Json     // the actual data
+        createdAt  DateTime @default(now())
+        updatedAt  DateTime @updatedAt
+      
+        @@id([workflowId, dataType])
+      }
+      
+      // Analytics - aggregated analytics data
+      model Analytics {
+        id        String   @id @default(cuid())
+        userId    String
+        user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+        type      String   // 'mood_trend', 'engagement', 'progress'
+        data      Json     // the analytics data
+        period    String   // 'daily', 'weekly', 'monthly'
+        date      DateTime
+        createdAt DateTime @default(now())
+      
+        @@unique([userId, type, period, date])
+        @@index([userId, date])
+      }
+  
+  - type: command
+    command: "cd libs/data-access && npx prisma generate"
+    cwd: "."
+  
+  - type: file
+    path: "libs/data-access/src/lib/prisma.service.ts"
+    content: |
+      import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+      import { PrismaClient } from '@prisma/client';
+      
+      @Injectable()
+      export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+        private readonly logger = new Logger(PrismaService.name);
+      
+        constructor() {
+          super({
+            log: process.env.NODE_ENV === 'development' 
+              ? ['query', 'info', 'warn', 'error'] 
+              : ['error'],
+          });
+        }
+      
+        async onModuleInit() {
+          await this.$connect();
+          this.logger.log('Connected to database');
+        }
+      
+        async onModuleDestroy() {
+          await this.$disconnect();
+          this.logger.log('Disconnected from database');
+        }
+      }
+  
+  - type: file
+    path: "libs/data-access/src/index.ts"
+    content: |
+      export * from './lib/prisma.service';
+      export * from './lib/repositories/user.repository';
+      export * from './lib/repositories/conversation.repository';
+      export * from './lib/repositories/message.repository';
+      export * from './lib/repositories/checkin.repository';
+      export * from './lib/repositories/session.repository';
+      export * from './lib/repositories/n8n-data.repository';
+  
+  - type: command
+    command: "cd libs/data-access && npx prisma migrate dev --name init"
+    cwd: "."
+    optional: true
+  
+  - type: message
+    content: |
+      ✅ Prisma database setup compleet!
+      
+      📊 Modellen aangemaakt:
+      - User (gebruikers)
+      - Session (sessies)
+      - Conversation (gesprekken)
+      - Message (berichten)
+      - CheckIn (dagelijkse check-ins)
+      - CoachingSettings (gebruikersinstellingen)
+      - N8nData (n8n workflow data)
+      - Analytics (geaggregeerde data)
+      
+      Volgende stap: repositories aanmaken met nestjs-crud skill
+
+output: "Complete Prisma setup met alle benodigde modellen"

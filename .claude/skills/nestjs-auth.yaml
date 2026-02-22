@@ -1,0 +1,360 @@
+name: nestjs_auth_setup
+description: Configureert JWT authenticatie in NestJS
+version: 1.0.0
+
+triggers:
+  keywords: ["auth", "authenticatie", "jwt", "login", "inloggen"]
+  intent: "beveiliging"
+
+steps:
+  - type: command
+    command: "cd apps/coaching-api && pnpm add @nestjs/jwt @nestjs/passport passport passport-jwt passport-local bcrypt && pnpm add -D @types/passport-jwt @types/passport-local @types/bcrypt"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @nx/nest:module auth --project=coaching-api"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @nx/nest:controller auth --project=coaching-api --flat"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @nx/nest:service auth --project=coaching-api --flat"
+    cwd: "."
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/dto/login.dto.ts"
+    content: |
+      import { ApiProperty } from '@nestjs/swagger';
+      import { IsString, IsPhoneNumber, IsNotEmpty, MinLength } from 'class-validator';
+      
+      export class LoginDto {
+        @ApiProperty({ example: '+31612345678', description: 'Phone number' })
+        @IsPhoneNumber()
+        @IsNotEmpty()
+        phone: string;
+      
+        @ApiProperty({ example: '123456', description: 'Verification code' })
+        @IsString()
+        @MinLength(6)
+        @IsNotEmpty()
+        code: string;
+      }
+      
+      export class RegisterDto {
+        @ApiProperty({ example: '+31612345678', description: 'Phone number' })
+        @IsPhoneNumber()
+        @IsNotEmpty()
+        phone: string;
+      
+        @ApiProperty({ example: 'John', description: 'Name', required: false })
+        @IsString()
+        name?: string;
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/dto/auth-response.dto.ts"
+    content: |
+      import { ApiProperty } from '@nestjs/swagger';
+      
+      export class AuthResponseDto {
+        @ApiProperty()
+        accessToken: string;
+      
+        @ApiProperty()
+        refreshToken: string;
+      
+        @ApiProperty()
+        expiresIn: number;
+      
+        @ApiProperty()
+        userId: string;
+      
+        @ApiProperty()
+        phone: string;
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/strategies/jwt.strategy.ts"
+    content: |
+      import { Injectable, UnauthorizedException } from '@nestjs/common';
+      import { PassportStrategy } from '@nestjs/passport';
+      import { ExtractJwt, Strategy } from 'passport-jwt';
+      import { ConfigService } from '@nestjs/config';
+      import { PrismaService } from '@coaching-app/data-access';
+      
+      @Injectable()
+      export class JwtStrategy extends PassportStrategy(Strategy) {
+        constructor(
+          private configService: ConfigService,
+          private prisma: PrismaService,
+        ) {
+          super({
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ignoreExpiration: false,
+            secretOrKey: configService.get('JWT_SECRET'),
+          });
+        }
+      
+        async validate(payload: any) {
+          const user = await this.prisma.user.findUnique({
+            where: { id: payload.sub },
+          });
+      
+          if (!user) {
+            throw new UnauthorizedException();
+          }
+      
+          return { userId: payload.sub, phone: payload.phone };
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/strategies/local.strategy.ts"
+    content: |
+      import { Injectable, UnauthorizedException } from '@nestjs/common';
+      import { PassportStrategy } from '@nestjs/passport';
+      import { Strategy } from 'passport-local';
+      import { AuthService } from '../auth.service';
+      
+      @Injectable()
+      export class LocalStrategy extends PassportStrategy(Strategy) {
+        constructor(private authService: AuthService) {
+          super({ usernameField: 'phone' });
+        }
+      
+        async validate(phone: string, code: string): Promise<any> {
+          const user = await this.authService.validateUser(phone, code);
+          if (!user) {
+            throw new UnauthorizedException('Invalid phone or code');
+          }
+          return user;
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/guards/jwt-auth.guard.ts"
+    content: |
+      import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+      import { AuthGuard } from '@nestjs/passport';
+      import { Observable } from 'rxjs';
+      
+      @Injectable()
+      export class JwtAuthGuard extends AuthGuard('jwt') {
+        canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+          return super.canActivate(context);
+        }
+      
+        handleRequest(err: any, user: any, info: any) {
+          if (err || !user) {
+            throw err || new UnauthorizedException('Authentication required');
+          }
+          return user;
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/guards/local-auth.guard.ts"
+    content: |
+      import { Injectable } from '@nestjs/common';
+      import { AuthGuard } from '@nestjs/passport';
+      
+      @Injectable()
+      export class LocalAuthGuard extends AuthGuard('local') {}
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/auth.service.ts"
+    content: |
+      import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+      import { JwtService } from '@nestjs/jwt';
+      import { ConfigService } from '@nestjs/config';
+      import { PrismaService } from '@coaching-app/data-access';
+      import * as bcrypt from 'bcrypt';
+      
+      @Injectable()
+      export class AuthService {
+        private readonly logger = new Logger(AuthService.name);
+      
+        constructor(
+          private prisma: PrismaService,
+          private jwtService: JwtService,
+          private configService: ConfigService,
+        ) {}
+      
+        async validateUser(phone: string, code: string): Promise<any> {
+          // In productie: check tegen SMS verstuurde code
+          // Voor nu: simple mock (in productie vervangen door echte verificatie)
+          const user = await this.prisma.user.findUnique({
+            where: { phone },
+          });
+      
+          if (!user) {
+            return null;
+          }
+      
+          // Mock verificatie: in productie gebruik je echte SMS codes
+          if (code !== '123456') {
+            return null;
+          }
+      
+          return user;
+        }
+      
+        async login(user: any) {
+          const payload = { sub: user.id, phone: user.phone };
+          
+          return {
+            accessToken: this.jwtService.sign(payload),
+            refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
+            expiresIn: 3600, // 1 uur in seconden
+            userId: user.id,
+            phone: user.phone,
+          };
+        }
+      
+        async register(phone: string, name?: string) {
+          // Check of gebruiker al bestaat
+          let user = await this.prisma.user.findUnique({
+            where: { phone },
+          });
+      
+          if (!user) {
+            // Nieuwe gebruiker aanmaken
+            user = await this.prisma.user.create({
+              data: {
+                phone,
+                name,
+              },
+            });
+      
+            // Standaard instellingen aanmaken
+            await this.prisma.coachingSettings.create({
+              data: {
+                userId: user.id,
+                checkinTime: '09:00',
+                coachingStyle: 'supportive',
+              },
+            });
+      
+            this.logger.log(`New user registered: ${phone}`);
+          }
+      
+          // In productie: stuur SMS met verificatiecode
+          this.logger.log(`Login code sent to ${phone}: 123456`);
+      
+          return {
+            message: 'Verification code sent',
+            phone,
+            userId: user.id,
+          };
+        }
+      
+        async refreshToken(refreshToken: string) {
+          try {
+            const payload = this.jwtService.verify(refreshToken);
+            const user = await this.prisma.user.findUnique({
+              where: { id: payload.sub },
+            });
+      
+            if (!user) {
+              throw new UnauthorizedException('User not found');
+            }
+      
+            return this.login(user);
+          } catch (error) {
+            throw new UnauthorizedException('Invalid refresh token');
+          }
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/auth.controller.ts"
+    content: |
+      import { Controller, Post, Body, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
+      import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+      import { AuthService } from './auth.service';
+      import { LoginDto, RegisterDto } from './dto/login.dto';
+      import { AuthResponseDto } from './dto/auth-response.dto';
+      import { LocalAuthGuard } from './guards/local-auth.guard';
+      
+      @ApiTags('auth')
+      @Controller('auth')
+      export class AuthController {
+        constructor(private authService: AuthService) {}
+      
+        @Post('register')
+        @ApiOperation({ summary: 'Register new user or request login code' })
+        @ApiResponse({ status: 200, description: 'Verification code sent' })
+        async register(@Body() registerDto: RegisterDto) {
+          return this.authService.register(registerDto.phone, registerDto.name);
+        }
+      
+        @UseGuards(LocalAuthGuard)
+        @Post('login')
+        @HttpCode(HttpStatus.OK)
+        @ApiOperation({ summary: 'Login with phone and verification code' })
+        @ApiBody({ type: LoginDto })
+        @ApiResponse({ status: 200, type: AuthResponseDto })
+        async login(@Body() loginDto: LoginDto, @Req() req) {
+          return this.authService.login(req.user);
+        }
+      
+        @Post('refresh')
+        @HttpCode(HttpStatus.OK)
+        @ApiOperation({ summary: 'Refresh access token' })
+        @ApiResponse({ status: 200, type: AuthResponseDto })
+        async refresh(@Body('refreshToken') refreshToken: string) {
+          return this.authService.refreshToken(refreshToken);
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/auth/auth.module.ts"
+    content: |
+      import { Module } from '@nestjs/common';
+      import { JwtModule } from '@nestjs/jwt';
+      import { PassportModule } from '@nestjs/passport';
+      import { ConfigService } from '@nestjs/config';
+      import { DataAccessModule } from '@coaching-app/data-access';
+      import { AuthService } from './auth.service';
+      import { AuthController } from './auth.controller';
+      import { JwtStrategy } from './strategies/jwt.strategy';
+      import { LocalStrategy } from './strategies/local.strategy';
+      
+      @Module({
+        imports: [
+          DataAccessModule,
+          PassportModule,
+          JwtModule.registerAsync({
+            useFactory: (configService: ConfigService) => ({
+              secret: configService.get('JWT_SECRET'),
+              signOptions: { expiresIn: '1h' },
+            }),
+            inject: [ConfigService],
+          }),
+        ],
+        controllers: [AuthController],
+        providers: [AuthService, JwtStrategy, LocalStrategy],
+        exports: [AuthService],
+      })
+      export class AuthModule {}
+  
+  - type: command
+    command: "nx lint coaching-api"
+    cwd: "."
+    optional: true
+  
+  - type: message
+    content: |
+      ✅ JWT authenticatie succesvol ingesteld!
+      
+      Endpoints:
+      - POST /auth/register → Stuurt verificatiecode
+      - POST /auth/login    → Ruilt code voor JWT tokens
+      - POST /auth/refresh  → Ververs access token
+      
+      Gebruik JwtAuthGuard voor protected routes:
+      @UseGuards(JwtAuthGuard)
+
+output: "Complete JWT authenticatie setup"

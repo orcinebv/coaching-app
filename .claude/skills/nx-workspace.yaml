@@ -1,0 +1,93 @@
+
+## 🛠️ SKILLS (10 bestanden)
+
+### 1. `.claude/skills/nx-workspace.yaml`
+```yaml
+name: nx_workspace_creator
+description: Creëert een complete Nx workspace met Angular + NestJS
+version: 1.0.0
+
+triggers:
+  keywords: ["nx", "workspace", "monorepo", "setup", "nieuw project"]
+  intent: "start project"
+
+parameters:
+  - name: project_name
+    type: string
+    required: true
+    description: "Naam van het project"
+    default: "coaching-app"
+  - name: web_app_name
+    type: string
+    description: "Naam van de Angular app"
+    default: "coaching-web"
+  - name: api_app_name
+    type: string
+    description: "Naam van de NestJS app"
+    default: "coaching-api"
+
+steps:
+  - type: command
+    command: "npx create-nx-workspace@latest {{project_name}} --preset=angular-nest --appName={{web_app_name}} --style=scss --packageManager=pnpm"
+    cwd: "."
+  
+  - type: command
+    command: "cd {{project_name}} && pnpm install"
+    cwd: "."
+  
+  - type: file
+    path: "{{project_name}}/.gitignore"
+    content: |
+      node_modules/
+      dist/
+      .env
+      .DS_Store
+      coverage/
+      tmp/
+      .nx/
+  
+  - type: file
+    path: "{{project_name}}/.env.example"
+    content: |
+      # Database
+      DATABASE_URL=postgresql://postgres:password@localhost:5432/coaching
+      
+      # JWT
+      JWT_SECRET=your-secret-key-here
+      JWT_EXPIRES_IN=7d
+      
+      # n8n
+      N8N_WEBHOOK_URL=http://localhost:5678/webhook
+      N8N_API_KEY=your-n8n-api-key
+      
+      # OpenAI (voor n8n)
+      OPENAI_API_KEY=your-openai-key
+      
+      # API
+      API_PORT=3333
+      API_URL=http://localhost:3333
+  
+  - type: command
+    command: "git add . && git commit -m 'feat: initial Nx workspace with Angular/NestJS'"
+    cwd: "{{project_name}}"
+  
+  - type: validate
+    command: "cd {{project_name}} && npx nx show projects"
+    expected: ".*{{web_app_name}}.*{{api_app_name}}.*"
+  
+  - type: message
+    content: |
+      ✅ Nx workspace '{{project_name}}' succesvol aangemaakt!
+      
+      📁 Project structuur:
+      - apps/{{web_app_name}} (Angular frontend)
+      - apps/{{api_app_name}} (NestJS backend)
+      - libs/ (voor gedeelde code)
+      
+      🚀 Om te starten:
+      cd {{project_name}}
+      pnpm start:all
+      
+      Volgende stap: libraries aanmaken met prisma-setup skill
+
+output: "Werkende Nx workspace met Angular en NestJS"

@@ -1,0 +1,195 @@
+{
+  "name": "Daily Check-in Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every Day at 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://backend:3000/webhooks/checkin-reminder",
+        "options": {}
+      },
+      "id": "get-users",
+      "name": "Get Users for Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.users.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-users",
+      "name": "Has Users?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "users",
+        "options": {}
+      },
+      "id": "split-users",
+      "name": "Split Users",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [850, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/checkin-reminder",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "userName",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "type",
+              "value": "daily_checkin"
+            },
+            {
+              "name": "message",
+              "value": "Goedemorgen {{ $json.name }}! Tijd voor je dagelijkse check-in. Hoe voel je je vandaag?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-websocket-reminder",
+      "name": "Send WebSocket Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/send-notification",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "checkin-reminder"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Split Users').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-email-reminder",
+      "name": "Send Email Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 350]
+    },
+    {
+      "parameters": {},
+      "id": "no-users",
+      "name": "No Users to Remind",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [850, 400]
+    }
+  ],
+  "connections": {
+    "Every Day at 9:00": {
+      "main": [
+        [
+          {
+            "node": "Get Users for Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users for Reminder": {
+      "main": [
+        [
+          {
+            "node": "Has Users?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Users?": {
+      "main": [
+        [
+          {
+            "node": "Split Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Users to Remind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Users": {
+      "main": [
+        [
+          {
+            "node": "Send WebSocket Reminder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "coaching",
+      "id": "1"
+    }
+  ]
+}

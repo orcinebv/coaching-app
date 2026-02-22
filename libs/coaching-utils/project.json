@@ -1,0 +1,26 @@
+{
+  "name": "coaching-utils",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/coaching-utils/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/coaching-utils",
+        "main": "libs/coaching-utils/src/index.ts",
+        "tsConfig": "libs/coaching-utils/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/coaching-utils"],
+      "options": {
+        "jestConfig": "libs/coaching-utils/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": ["scope:shared"]
+}

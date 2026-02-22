@@ -1,0 +1,262 @@
+name: nestjs_crud_generator
+description: Genereert complete CRUD module voor een resource
+version: 1.0.0
+
+triggers:
+  keywords: ["crud", "api", "endpoint", "resource", "module"]
+  intent: "maak crud"
+
+parameters:
+  - name: resource
+    type: string
+    required: true
+    description: "De resource naam (bijv. conversation, checkin, user)"
+  - name: fields
+    type: array
+    description: "Velden voor DTOs"
+    default: []
+
+steps:
+  - type: command
+    command: "nx g @nx/nest:module {{resource}} --project=coaching-api"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @nx/nest:controller {{resource}} --project=coaching-api --flat"
+    cwd: "."
+  
+  - type: command
+    command: "nx g @nx/nest:service {{resource}} --project=coaching-api --flat"
+    cwd: "."
+  
+  - type: command
+    command: "mkdir -p apps/coaching-api/src/app/{{resource}}/dto"
+    cwd: "."
+  
+  - type: file
+    path: "apps/coaching-api/src/app/{{resource}}/dto/create-{{resource}}.dto.ts"
+    content: |
+      import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsArray } from 'class-validator';
+      import { ApiProperty } from '@nestjs/swagger';
+      
+      export class Create{{pascalCase resource}}Dto {
+        @ApiProperty({ description: 'User ID' })
+        @IsUUID()
+        userId: string;
+      
+        {% for field in fields %}
+        @ApiProperty({ description: '{{field.description}}' })
+        {{field.decorator}}
+        {{field.name}}{{field.optional ? '?' : ''}}: {{field.type}};
+        {% endfor %}
+      
+        @ApiProperty({ required: false })
+        @IsOptional()
+        @IsObject()
+        metadata?: Record<string, any>;
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/{{resource}}/dto/update-{{resource}}.dto.ts"
+    content: |
+      import { PartialType } from '@nestjs/swagger';
+      import { Create{{pascalCase resource}}Dto } from './create-{{resource}}.dto';
+      
+      export class Update{{pascalCase resource}}Dto extends PartialType(Create{{pascalCase resource}}Dto) {}
+  
+  - type: file
+    path: "apps/coaching-api/src/app/{{resource}}/{{resource}}.controller.ts"
+    content: |
+      import { 
+        Controller, Get, Post, Body, Patch, Param, Delete, 
+        UseGuards, Query, HttpCode, HttpStatus 
+      } from '@nestjs/common';
+      import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+      import { {{pascalCase resource}}Service } from './{{resource}}.service';
+      import { Create{{pascalCase resource}}Dto } from './dto/create-{{resource}}.dto';
+      import { Update{{pascalCase resource}}Dto } from './dto/update-{{resource}}.dto';
+      import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+      
+      @ApiTags('{{resource}}')
+      @ApiBearerAuth()
+      @UseGuards(JwtAuthGuard)
+      @Controller('{{resource}}')
+      export class {{pascalCase resource}}Controller {
+        constructor(private readonly {{resource}}Service: {{pascalCase resource}}Service) {}
+      
+        @Post()
+        @ApiOperation({ summary: 'Create a new {{resource}}' })
+        @ApiResponse({ status: 201, description: '{{resource}} created successfully' })
+        @ApiResponse({ status: 400, description: 'Bad request' })
+        @HttpCode(HttpStatus.CREATED)
+        create(@Body() create{{pascalCase resource}}Dto: Create{{pascalCase resource}}Dto) {
+          return this.{{resource}}Service.create(create{{pascalCase resource}}Dto);
+        }
+      
+        @Get()
+        @ApiOperation({ summary: 'Get all {{resource}}s' })
+        @ApiResponse({ status: 200, description: 'Return all {{resource}}s' })
+        findAll(
+          @Query('page') page = 1,
+          @Query('limit') limit = 10,
+          @Query('userId') userId?: string
+        ) {
+          return this.{{resource}}Service.findAll({ page, limit, userId });
+        }
+      
+        @Get(':id')
+        @ApiOperation({ summary: 'Get {{resource}} by id' })
+        @ApiResponse({ status: 200, description: 'Return {{resource}}' })
+        @ApiResponse({ status: 404, description: '{{resource}} not found' })
+        findOne(@Param('id') id: string) {
+          return this.{{resource}}Service.findOne(id);
+        }
+      
+        @Patch(':id')
+        @ApiOperation({ summary: 'Update {{resource}}' })
+        @ApiResponse({ status: 200, description: '{{resource}} updated successfully' })
+        @ApiResponse({ status: 404, description: '{{resource}} not found' })
+        update(@Param('id') id: string, @Body() update{{pascalCase resource}}Dto: Update{{pascalCase resource}}Dto) {
+          return this.{{resource}}Service.update(id, update{{pascalCase resource}}Dto);
+        }
+      
+        @Delete(':id')
+        @ApiOperation({ summary: 'Delete {{resource}}' })
+        @ApiResponse({ status: 204, description: '{{resource}} deleted successfully' })
+        @ApiResponse({ status: 404, description: '{{resource}} not found' })
+        @HttpCode(HttpStatus.NO_CONTENT)
+        remove(@Param('id') id: string) {
+          return this.{{resource}}Service.remove(id);
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/{{resource}}/{{resource}}.service.ts"
+    content: |
+      import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+      import { PrismaService } from '@coaching-app/data-access';
+      import { Create{{pascalCase resource}}Dto } from './dto/create-{{resource}}.dto';
+      import { Update{{pascalCase resource}}Dto } from './dto/update-{{resource}}.dto';
+      
+      @Injectable()
+      export class {{pascalCase resource}}Service {
+        private readonly logger = new Logger({{pascalCase resource}}Service.name);
+      
+        constructor(private prisma: PrismaService) {}
+      
+        async create(create{{pascalCase resource}}Dto: Create{{pascalCase resource}}Dto) {
+          try {
+            const {{resource}} = await this.prisma.{{resource}}.create({
+              data: create{{pascalCase resource}}Dto,
+            });
+            this.logger.log(`Created {{resource}} with id: ${ {{resource}}.id }`);
+            return {{resource}};
+          } catch (error) {
+            this.logger.error(`Failed to create {{resource}}: ${error.message}`);
+            throw error;
+          }
+        }
+      
+        async findAll(params: { page?: number; limit?: number; userId?: string }) {
+          const { page = 1, limit = 10, userId } = params;
+          const skip = (page - 1) * limit;
+      
+          const where = userId ? { userId } : {};
+      
+          const [items, total] = await Promise.all([
+            this.prisma.{{resource}}.findMany({
+              where,
+              skip,
+              take: limit,
+              orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.{{resource}}.count({ where }),
+          ]);
+      
+          return {
+            items,
+            meta: {
+              page,
+              limit,
+              total,
+              pages: Math.ceil(total / limit),
+            },
+          };
+        }
+      
+        async findOne(id: string) {
+          const {{resource}} = await this.prisma.{{resource}}.findUnique({
+            where: { id },
+          });
+      
+          if (!{{resource}}) {
+            throw new NotFoundException(`{{pascalCase resource}} with id ${id} not found`);
+          }
+      
+          return {{resource}};
+        }
+      
+        async update(id: string, update{{pascalCase resource}}Dto: Update{{pascalCase resource}}Dto) {
+          await this.findOne(id); // Check if exists
+      
+          try {
+            const {{resource}} = await this.prisma.{{resource}}.update({
+              where: { id },
+              data: update{{pascalCase resource}}Dto,
+            });
+            this.logger.log(`Updated {{resource}} with id: ${id}`);
+            return {{resource}};
+          } catch (error) {
+            this.logger.error(`Failed to update {{resource}} ${id}: ${error.message}`);
+            throw error;
+          }
+        }
+      
+        async remove(id: string) {
+          await this.findOne(id); // Check if exists
+      
+          try {
+            await this.prisma.{{resource}}.delete({
+              where: { id },
+            });
+            this.logger.log(`Deleted {{resource}} with id: ${id}`);
+          } catch (error) {
+            this.logger.error(`Failed to delete {{resource}} ${id}: ${error.message}`);
+            throw error;
+          }
+        }
+      }
+  
+  - type: file
+    path: "apps/coaching-api/src/app/{{resource}}/{{resource}}.module.ts"
+    content: |
+      import { Module } from '@nestjs/common';
+      import { {{pascalCase resource}}Service } from './{{resource}}.service';
+      import { {{pascalCase resource}}Controller } from './{{resource}}.controller';
+      
+      @Module({
+        controllers: [{{pascalCase resource}}Controller],
+        providers: [{{pascalCase resource}}Service],
+        exports: [{{pascalCase resource}}Service],
+      })
+      export class {{pascalCase resource}}Module {}
+  
+  - type: command
+    command: "nx lint coaching-api"
+    cwd: "."
+    optional: true
+  
+  - type: message
+    content: |
+      ✅ CRUD module voor '{{resource}}' succesvol aangemaakt!
+      
+      Endpoints:
+      - POST    /api/{{resource}}      → create
+      - GET     /api/{{resource}}       → findAll (with pagination)
+      - GET     /api/{{resource}}/:id   → findOne
+      - PATCH   /api/{{resource}}/:id   → update
+      - DELETE  /api/{{resource}}/:id   → remove
+      
+      Volgende stap: testen met curl of Postman
+
+output: "Complete CRUD API voor {{resource}}"
