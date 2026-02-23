@@ -8,3 +8,7 @@ export * from './lib/goal';
 export * from './lib/journal';
 export * from './lib/exercise';
 export * from './lib/analytics';
+export * from './lib/sentiment';
+export * from './lib/insight';
+export * from './lib/prompt';
+export * from './lib/recommendation';

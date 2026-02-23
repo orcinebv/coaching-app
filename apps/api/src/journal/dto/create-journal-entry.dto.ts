@@ -10,7 +10,7 @@ export class CreateJournalEntryDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  content: string;
+  content!: string;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 10 })
   @IsInt()

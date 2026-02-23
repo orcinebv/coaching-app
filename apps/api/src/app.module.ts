@@ -21,6 +21,11 @@ import { JournalModule } from './journal/journal.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ReportsModule } from './reports/reports.module';
+import { AiModule } from './ai/ai.module';
+import { SentimentModule } from './sentiment/sentiment.module';
+import { CoachingPromptsModule } from './coaching-prompts/coaching-prompts.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { InsightsModule } from './insights/insights.module';
 
 @Module({
   imports: [
@@ -47,6 +52,11 @@ import { ReportsModule } from './reports/reports.module';
     ExercisesModule,
     AnalyticsModule,
     ReportsModule,
+    AiModule,
+    SentimentModule,
+    CoachingPromptsModule,
+    RecommendationsModule,
+    InsightsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

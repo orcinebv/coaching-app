@@ -16,7 +16,6 @@ export class AnalyticsService {
       return { weekdayAverages: [], timeOfMonthPattern: [], correlations: null };
     }
 
-    // Weekday averages (0=Sunday, 6=Saturday)
     const weekdayData: Record<number, { mood: number[]; energy: number[] }> = {};
     for (let i = 0; i < 7; i++) weekdayData[i] = { mood: [], energy: [] };
 
@@ -34,7 +33,6 @@ export class AnalyticsService {
       count: data.mood.length,
     }));
 
-    // Recent 30-day trend
     const recent30 = checkIns.slice(0, 30).reverse();
     const trendData = recent30.map(ci => ({
       date: ci.createdAt,
@@ -42,13 +40,11 @@ export class AnalyticsService {
       energy: ci.energy,
     }));
 
-    // Calculate correlation between mood and energy
     const moods = checkIns.map(ci => ci.mood);
     const energies = checkIns.map(ci => ci.energy);
     const n = moods.length;
     const correlation = n > 1 ? this.pearsonCorrelation(moods, energies) : null;
 
-    // Best/worst weekday
     const filledWeekdays = weekdayAverages.filter(d => d.avgMood !== null);
     const bestDay = filledWeekdays.length > 0
       ? filledWeekdays.reduce((best, curr) => (curr.avgMood! > best.avgMood! ? curr : best))
@@ -114,6 +110,51 @@ export class AnalyticsService {
       },
       journal: { total: journalCount },
       exercises: { total: exerciseStats },
+    };
+  }
+
+  async getProgressPrediction(userId: string) {
+    const checkIns = await this.prisma.checkIn.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      take: 30,
+    });
+
+    if (checkIns.length < 5) {
+      return { predictions: [], confidence: 'low', dataPoints: checkIns.length };
+    }
+
+    const moods = checkIns.map(ci => ci.mood);
+    const n = moods.length;
+    const indices = moods.map((_, i) => i);
+    const meanI = (n - 1) / 2;
+    const meanM = moods.reduce((a, b) => a + b, 0) / n;
+
+    const num = indices.reduce((sum, i) => sum + (i - meanI) * (moods[i] - meanM), 0);
+    const den = indices.reduce((sum, i) => sum + Math.pow(i - meanI, 2), 0);
+    const slope = den !== 0 ? num / den : 0;
+    const intercept = meanM - slope * meanI;
+
+    const predictions = [];
+    const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+    for (let i = 1; i <= 7; i++) {
+      const futureIndex = n - 1 + i;
+      const predicted = Math.max(1, Math.min(10, intercept + slope * futureIndex));
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      predictions.push({
+        date: date.toISOString(),
+        day: dayNames[date.getDay()],
+        predictedMood: Math.round(predicted * 10) / 10,
+        trend: slope > 0.05 ? 'up' : slope < -0.05 ? 'down' : 'stable',
+      });
+    }
+
+    return {
+      predictions,
+      confidence: n >= 20 ? 'high' : n >= 10 ? 'medium' : 'low',
+      dataPoints: n,
+      trend: slope > 0.05 ? 'improving' : slope < -0.05 ? 'declining' : 'stable',
     };
   }
 }

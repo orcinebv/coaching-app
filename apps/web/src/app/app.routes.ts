@@ -65,4 +65,16 @@ export const routes: Routes = [
       import('./features/analytics/analytics.component').then((m) => m.AnalyticsComponent),
     canActivate: [authGuard],
   },
+  {
+    path: 'sentiment',
+    loadComponent: () =>
+      import('./features/sentiment/sentiment.component').then((m) => m.SentimentComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'insights',
+    loadComponent: () =>
+      import('./features/insights/insights.component').then((m) => m.InsightsComponent),
+    canActivate: [authGuard],
+  },
 ];

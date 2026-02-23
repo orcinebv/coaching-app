@@ -25,6 +25,11 @@ model User {
   journalEntries      JournalEntry[]
   exerciseCompletions ExerciseCompletion[]
   reports             Report[]
+  sentimentResults    SentimentResult[]
+  insights            UserInsight[]
+  dailyPrompts        DailyPrompt[]
+  recommendations     Recommendation[]
+  aiUsage             AiUsage[]
 }
 
 model Conversation {
@@ -141,18 +146,19 @@ model JournalEntry {
 }
 
 model Exercise {
-  id          String              @id @default(uuid())
-  title       String
-  description String
-  category    String
-  duration    Int
-  difficulty  String              @default("beginner")
-  steps       String              @default("[]")
-  benefits    String              @default("[]")
-  isActive    Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  completions ExerciseCompletion[]
+  id              String               @id @default(uuid())
+  title           String
+  description     String
+  category        String
+  duration        Int
+  difficulty      String               @default("beginner")
+  steps           String               @default("[]")
+  benefits        String               @default("[]")
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  completions     ExerciseCompletion[]
+  recommendations Recommendation[]
 }
 
 model ExerciseCompletion {
@@ -181,4 +187,83 @@ model Report {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model SentimentResult {
+  id         String   @id @default(uuid())
+  userId     String
+  sourceType String
+  sourceId   String
+  overall    Float
+  emotions   String   @default("{}")
+  crisis     Boolean  @default(false)
+  segments   String   @default("[]")
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sourceId])
+}
+
+model UserInsight {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  content   String
+  data      String    @default("{}")
+  isRead    Boolean   @default(false)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model DailyPrompt {
+  id          String    @id @default(uuid())
+  userId      String
+  prompt      String
+  type        String
+  context     String    @default("{}")
+  rating      Int?
+  skipped     Boolean   @default(false)
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Recommendation {
+  id         String    @id @default(uuid())
+  userId     String
+  exerciseId String?
+  type       String
+  title      String
+  reason     String
+  score      Float     @default(0.5)
+  helpful    Boolean?
+  dismissed  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise   Exercise? @relation(fields: [exerciseId], references: [id])
+
+  @@index([userId])
+}
+
+model AiUsage {
+  id         String   @id @default(uuid())
+  userId     String
+  service    String
+  tokensUsed Int      @default(0)
+  costEur    Float    @default(0)
+  responseMs Int      @default(0)
+  cached     Boolean  @default(false)
+  error      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }

@@ -5,7 +5,7 @@ export class CreateGoalDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @ApiPropertyOptional()
   @IsString()
@@ -15,24 +15,24 @@ export class CreateGoalDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  specific: string;
+  specific!: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  measurable: string;
+  measurable!: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  achievable: string;
+  achievable!: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  relevant: string;
+  relevant!: string;
 
   @ApiProperty()
   @IsDateString()
-  timeBound: string;
+  timeBound!: string;
 }

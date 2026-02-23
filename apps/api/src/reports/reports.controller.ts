@@ -8,7 +8,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class RequestReportDto {
   @ApiProperty({ enum: ['week', 'month'] })
   @IsIn(['week', 'month'])
-  type: 'week' | 'month';
+  type!: 'week' | 'month';
 }
 
 @ApiTags('reports')

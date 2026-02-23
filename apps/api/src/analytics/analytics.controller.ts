@@ -21,4 +21,10 @@ export class AnalyticsController {
   getProgressSummary(@Request() req: any) {
     return this.analyticsService.getProgressSummary(req.user.userId);
   }
+
+  @Get('prediction')
+  @ApiOperation({ summary: 'Get mood prediction for coming week' })
+  getPrediction(@Request() req: any) {
+    return this.analyticsService.getProgressPrediction(req.user.userId);
+  }
 }
