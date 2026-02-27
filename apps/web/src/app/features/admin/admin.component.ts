@@ -188,7 +188,7 @@ interface AuditLogEntry {
             <tbody>
               <tr *ngFor="let log of auditLogs()">
                 <td>{{ log.createdAt | date:'dd-MM-yyyy HH:mm' }}</td>
-                <td>{{ log.user?.name || 'Onbekend' }}</td>
+                <td>{{ log.user ? log.user.name : 'Onbekend' }}</td>
                 <td><span class="method-badge" [attr.data-method]="log.action">{{ log.action }}</span></td>
                 <td>{{ log.resource }}{{ log.resourceId ? '/' + log.resourceId.substring(0, 8) + '...' : '' }}</td>
                 <td>{{ log.ipAddress || '-' }}</td>

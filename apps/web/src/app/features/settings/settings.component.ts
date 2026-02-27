@@ -359,11 +359,11 @@ interface CoachingSettings {
       &:last-of-type {
         border-bottom: none;
       }
+    }
 
-      &--vertical {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+    .setting-row--vertical {
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .setting-info {
@@ -396,33 +396,33 @@ interface CoachingSettings {
         height: 0;
       }
 
-      &-slider {
-        position: absolute;
-        cursor: pointer;
-        inset: 0;
-        background-color: var(--border);
-        border-radius: 24px;
-        transition: background-color var(--transition);
-
-        &::before {
-          content: '';
-          position: absolute;
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          border-radius: 50%;
-          transition: transform var(--transition);
-        }
-      }
-
       input:checked + .toggle-slider {
         background-color: var(--primary);
       }
 
       input:checked + .toggle-slider::before {
         transform: translateX(20px);
+      }
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--border);
+      border-radius: 24px;
+      transition: background-color var(--transition);
+
+      &::before {
+        content: '';
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform var(--transition);
       }
     }
 

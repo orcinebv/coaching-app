@@ -67,24 +67,24 @@ import { Subscription } from 'rxjs';
       animation: slideIn 0.3s ease-out;
       font-size: 0.875rem;
       font-weight: 500;
+    }
 
-      &--checkin-reminder {
-        background-color: #ede9fe;
-        color: #5b21b6;
-        border-left: 3px solid #6366f1;
-      }
+    .notification--checkin-reminder {
+      background-color: #ede9fe;
+      color: #5b21b6;
+      border-left: 3px solid #6366f1;
+    }
 
-      &--weekly-report {
-        background-color: #d1fae5;
-        color: #065f46;
-        border-left: 3px solid #10b981;
-      }
+    .notification--weekly-report {
+      background-color: #d1fae5;
+      color: #065f46;
+      border-left: 3px solid #10b981;
+    }
 
-      &--info {
-        background-color: #e0f2fe;
-        color: #0c4a6e;
-        border-left: 3px solid #0ea5e9;
-      }
+    .notification--info {
+      background-color: #e0f2fe;
+      color: #0c4a6e;
+      border-left: 3px solid #0ea5e9;
     }
 
     .notification-icon {
