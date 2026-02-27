@@ -106,14 +106,14 @@ import { AuthStore } from '../../core/stores/auth.store';
 
           <button
             type="submit"
-            class="btn btn-primary w-full"
+            class="btn-submit"
             [disabled]="authStore.loading()"
           >
             @if (authStore.loading()) {
               <span class="spinner"></span>
-              Creating account...
+              Account aanmaken...
             } @else {
-              Create Account
+              Account aanmaken
             }
           </button>
         </form>
@@ -131,47 +131,59 @@ import { AuthStore } from '../../core/stores/auth.store';
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      padding: 1rem;
+      padding: 2rem 1rem;
       background-color: var(--bg);
     }
 
     .auth-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       background-color: var(--surface);
-      border-radius: var(--radius-xl);
+      border-radius: var(--radius-2xl);
       box-shadow: var(--shadow-lg);
-      padding: 2.5rem;
+      border: 1px solid var(--border);
+      padding: 2.75rem;
+      animation: fadeUp 0.3s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .auth-header {
-      text-align: center;
       margin-bottom: 2rem;
 
       h1 {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         color: var(--text);
+        letter-spacing: -0.03em;
+        line-height: 1.15;
         margin-bottom: 0.5rem;
       }
 
       p {
         color: var(--text-light);
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
       }
     }
 
     .alert {
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius-lg);
       margin-bottom: 1.5rem;
       font-size: 0.875rem;
+      font-weight: 500;
     }
 
     .alert-error {
       background-color: var(--danger-light);
       color: var(--danger);
-      border: 1px solid var(--danger);
+      border: 1px solid rgba(220, 38, 38, 0.2);
     }
 
     .form-group {
@@ -183,32 +195,52 @@ import { AuthStore } from '../../core/stores/auth.store';
         font-weight: 500;
         color: var(--text);
         margin-bottom: 0.375rem;
+        letter-spacing: 0.005em;
       }
 
-      input {
-        width: 100%;
-      }
+      input { width: 100%; }
 
       .error-message {
         display: block;
         font-size: 0.75rem;
         color: var(--danger);
-        margin-top: 0.25rem;
+        margin-top: 0.3125rem;
       }
     }
 
     .input-error {
       border-color: var(--danger) !important;
-
-      &:focus {
-        box-shadow: 0 0 0 3px var(--danger-light) !important;
-      }
+      &:focus { box-shadow: 0 0 0 3px var(--danger-light) !important; }
     }
 
-    button[type="submit"] {
-      margin-top: 0.5rem;
-      padding: 0.75rem;
-      font-size: 1rem;
+    .btn-submit {
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.8125rem 1.5rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--primary) 0%, #4c1d95 100%);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 14px rgba(45, 27, 105, 0.35);
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(45, 27, 105, 0.45);
+      }
+
+      &:active:not(:disabled) { transform: translateY(0); }
+
+      &:disabled { opacity: 0.6; cursor: not-allowed; }
     }
 
     .spinner {
@@ -218,26 +250,23 @@ import { AuthStore } from '../../core/stores/auth.store';
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: #fff;
       border-radius: 50%;
-      animation: spin 0.6s linear infinite;
+      animation: spin 0.65s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .auth-footer {
       text-align: center;
-      margin-top: 1.5rem;
+      margin-top: 1.75rem;
       font-size: 0.875rem;
       color: var(--text-light);
 
       a {
         color: var(--primary);
-        font-weight: 500;
+        font-weight: 600;
+        margin-left: 0.25rem;
 
-        &:hover {
-          text-decoration: underline;
-        }
+        &:hover { text-decoration: underline; }
       }
     }
   `],

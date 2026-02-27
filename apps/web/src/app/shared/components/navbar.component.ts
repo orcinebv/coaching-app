@@ -12,12 +12,14 @@ import { AuthStore } from '../../core/stores/auth.store';
       <div class="navbar-content">
         <div class="navbar-brand">
           <a routerLink="/dashboard" class="brand-link">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-            <span class="brand-text">Coaching App</span>
+            <div class="brand-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <span class="brand-text"><span class="brand-word">Coaching</span><span class="brand-dot">·</span><span class="brand-app">App</span></span>
           </a>
         </div>
 
@@ -106,7 +108,8 @@ import { AuthStore } from '../../core/stores/auth.store';
             <div class="user-avatar">
               {{ getUserInitial() }}
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron" [class.open]="userMenuOpen">
+            <span class="user-name">{{ authStore.user()?.name }}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron" [class.open]="userMenuOpen">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
 
@@ -149,10 +152,17 @@ import { AuthStore } from '../../core/stores/auth.store';
     .navbar {
       background-color: var(--surface);
       border-bottom: 1px solid var(--border);
-      height: 60px;
+      height: 64px;
       position: sticky;
       top: 0;
       z-index: 30;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.92);
+    }
+
+    :host-context([data-theme="dark"]) .navbar {
+      background-color: rgba(26, 24, 40, 0.92);
     }
 
     .navbar-content {
@@ -162,56 +172,103 @@ import { AuthStore } from '../../core/stores/auth.store';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 1.25rem;
+      padding: 0 1.5rem;
     }
 
     .navbar-brand {
       .brand-link {
         display: flex;
         align-items: center;
-        gap: 0.625rem;
+        gap: 0.75rem;
         text-decoration: none;
       }
 
+      .brand-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
       .brand-text {
-        font-size: 1.125rem;
-        font-weight: 700;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.0625rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+
+      .brand-word {
         color: var(--text);
+      }
+
+      .brand-dot {
+        color: var(--primary);
+        margin: 0 0.1em;
+        font-weight: 700;
+      }
+
+      .brand-app {
+        color: var(--text-light);
+        font-weight: 400;
       }
     }
 
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.125rem;
 
       a {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.875rem;
+        gap: 0.4375rem;
+        padding: 0.4375rem 0.75rem;
         border-radius: var(--radius);
         font-size: 0.875rem;
         font-weight: 500;
         color: var(--text-light);
         text-decoration: none;
         transition: all var(--transition);
+        letter-spacing: 0.005em;
+        position: relative;
+
+        svg {
+          opacity: 0.7;
+          transition: opacity var(--transition);
+        }
 
         &:hover {
           background-color: var(--surface-hover);
           color: var(--text);
+
+          svg { opacity: 1; }
         }
 
         &.active {
-          background-color: var(--primary-light);
           color: var(--primary);
+          background-color: var(--primary-light);
+          font-weight: 600;
+
+          svg { opacity: 1; }
         }
+      }
+
+      @media (max-width: 1024px) {
+        gap: 0;
+
+        a span { display: none; }
+        a { padding: 0.5rem; }
       }
 
       @media (max-width: 768px) {
         display: none;
         position: absolute;
-        top: 60px;
+        top: 64px;
         left: 0;
         right: 0;
         background-color: var(--surface);
@@ -220,13 +277,13 @@ import { AuthStore } from '../../core/stores/auth.store';
         padding: 0.5rem;
         box-shadow: var(--shadow-md);
 
-        &.nav-open {
-          display: flex;
-        }
+        &.nav-open { display: flex; }
 
         a {
           width: 100%;
           padding: 0.75rem 1rem;
+
+          span { display: inline; }
         }
       }
     }
@@ -234,7 +291,7 @@ import { AuthStore } from '../../core/stores/auth.store';
     .navbar-right {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.375rem;
     }
 
     .user-menu {
@@ -243,64 +300,88 @@ import { AuthStore } from '../../core/stores/auth.store';
       align-items: center;
       gap: 0.375rem;
       cursor: pointer;
-      padding: 0.25rem;
-      border-radius: var(--radius);
+      padding: 0.3125rem 0.5rem 0.3125rem 0.3125rem;
+      border-radius: var(--radius-lg);
+      transition: background-color var(--transition);
+      border: 1px solid transparent;
 
       &:hover {
         background-color: var(--surface-hover);
+        border-color: var(--border);
       }
     }
 
     .user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background-color: var(--primary);
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8125rem;
-      font-weight: 600;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @media (max-width: 640px) { display: none; }
     }
 
     .chevron {
       transition: transform var(--transition);
-      color: var(--text-light);
+      color: var(--text-lighter);
+      flex-shrink: 0;
 
-      &.open {
-        transform: rotate(180deg);
-      }
+      &.open { transform: rotate(180deg); }
     }
 
     .dropdown-menu {
       position: absolute;
-      top: calc(100% + 4px);
+      top: calc(100% + 6px);
       right: 0;
-      width: 220px;
+      width: 230px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow-lg);
       overflow: hidden;
       z-index: 40;
+      animation: fadeUp 0.15s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .dropdown-user {
-      padding: 0.875rem 1rem;
+      padding: 1rem 1rem 0.875rem;
       display: flex;
       flex-direction: column;
       gap: 0.125rem;
+      border-bottom: 1px solid var(--border);
     }
 
     .dropdown-name {
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       color: var(--text);
+      letter-spacing: -0.01em;
     }
 
     .dropdown-email {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--text-light);
     }
 
@@ -317,32 +398,34 @@ import { AuthStore } from '../../core/stores/auth.store';
       padding: 0.75rem 1rem;
       background: none;
       border: none;
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
+      font-family: 'DM Sans', sans-serif;
       color: var(--text);
       cursor: pointer;
       transition: background-color var(--transition);
+      text-align: left;
 
-      &:hover {
-        background-color: var(--surface-hover);
-      }
+      &:hover { background-color: var(--surface-hover); }
+
+      &.danger { color: var(--danger); }
     }
 
     .hamburger {
       display: none;
       background: none;
-      border: none;
-      padding: 0.375rem;
+      border: 1px solid transparent;
+      padding: 0.4375rem;
       color: var(--text);
       cursor: pointer;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius);
+      transition: all var(--transition);
 
       &:hover {
         background-color: var(--surface-hover);
+        border-color: var(--border);
       }
 
-      @media (max-width: 768px) {
-        display: flex;
-      }
+      @media (max-width: 768px) { display: flex; }
     }
   `],
 })
