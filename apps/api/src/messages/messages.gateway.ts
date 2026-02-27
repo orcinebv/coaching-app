@@ -86,7 +86,18 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(`conversation:${data.conversationId}`).emit('newMessage', message);
 
     // Trigger n8n webhook for AI response
-    this.messagesService.triggerN8nWebhook(data.conversationId, data.content, userId);
+    const aiResult = await this.messagesService.triggerN8nWebhook(data.conversationId, data.content, userId);
+
+    // If n8n is unavailable, emit the fallback message directly
+    if (aiResult?.fallback) {
+      const assistantMessage = await this.messagesService.create(
+        data.conversationId,
+        userId,
+        aiResult.message || 'Ik heb op dit moment moeite met verbinding. Probeer het later opnieuw.',
+        'assistant',
+      );
+      this.server.to(`conversation:${data.conversationId}`).emit('newMessage', assistantMessage);
+    }
 
     return { event: 'messageSent', data: message };
   }

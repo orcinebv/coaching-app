@@ -16,16 +16,84 @@
     },
     {
       "parameters": {
-        "resource": "chat",
-        "model": "gpt-4o-mini",
-        "messages": {
-          "values": [
+        "url": "=http://backend:3000/webhooks/user-context/{{ $('Webhook').item.json.body.userId }}",
+        "options": {}
+      },
+      "id": "get-user-context",
+      "name": "Get User Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/webhooks/analyze-message",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
             {
-              "role": "system",
-              "content": "Je bent een empathische en professionele coach. Je helpt gebruikers met persoonlijke ontwikkeling, doelen stellen, motivatie en welzijn. Geef concrete, bruikbare adviezen. Reageer in het Nederlands tenzij de gebruiker een andere taal gebruikt. Wees warm maar professioneel. Stel verdiepende vragen om de gebruiker te helpen reflecteren."
+              "name": "userId",
+              "value": "={{ $('Webhook').item.json.body.userId }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Webhook').item.json.body.message }}"
+            },
+            {
+              "name": "conversationId",
+              "value": "={{ $('Webhook').item.json.body.conversationId }}"
             }
           ]
         },
+        "options": {}
+      },
+      "id": "analyze-sentiment",
+      "name": "Analyze Sentiment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [710, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "systemPrompt",
+              "value": "=You are an empathetic and professional coach helping users with personal development, goals, motivation and wellbeing. You are warm but professional. You ask deepening questions to help the user reflect and give concrete, actionable advice.\n\nLANGUAGE INSTRUCTION: You MUST respond exclusively in the language with code '{{ $('Get User Context').item.json.language ?? 'nl' }}'. Do not use any other language, regardless of the language the user writes in.\n\nUSER CONTEXT (use this to personalise your response):\n- Sentiment score (30-day average): {{ $('Get User Context').item.json.sentiment?.avgOverall ?? 'no data' }}\n- Mood trend: {{ $('Get User Context').item.json.sentiment?.trend ?? 'unknown' }}\n- Dominant emotion: {{ $('Get User Context').item.json.sentiment?.dominantEmotion ?? 'unknown' }}\n- Best day of the week: {{ $('Get User Context').item.json.patterns?.bestDay ?? 'unknown' }}\n- Most difficult day: {{ $('Get User Context').item.json.patterns?.worstDay ?? 'unknown' }}\n- Active goals: {{ ($('Get User Context').item.json.activeGoals ?? []).join(', ') || 'no active goals' }}\n- Recent insights: {{ ($('Get User Context').item.json.recentInsights ?? []).slice(0,2).map(i => i.title).join('; ') || 'none' }}\n- Recommended focus: {{ $('Get User Context').item.json.topRecommendation?.title ?? 'none' }} ({{ $('Get User Context').item.json.topRecommendation?.reason ?? '' }})\n\nCRISIS PROTOCOL: If you detect crisis signals, always refer directly to the local emergency mental health line."
+            },
+            {
+              "name": "userMessageWithHistory",
+              "value": "={{ ($('Webhook').item.json.body.history ?? []).slice(-6).map(h => h.role + ': ' + h.content).join('\\n') + (($('Webhook').item.json.body.history ?? []).length > 0 ? '\\n\\n' : '') + $('Webhook').item.json.body.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "build-system-prompt",
+      "name": "Build System Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [940, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "chatModel": "gpt-4o-mini",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "={{ $('Build System Prompt').item.json.systemPrompt }}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $('Build System Prompt').item.json.userMessageWithHistory }}"
+            }
+          ]
+        },
+        "simplifyOutput": true,
         "options": {
           "temperature": 0.7,
           "maxTokens": 1000
@@ -33,15 +101,60 @@
       },
       "id": "openai-chat",
       "name": "OpenAI Chat",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.2,
-      "position": [500, 300],
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [1170, 300],
       "credentials": {
         "openAiApi": {
           "id": "openai-credentials",
           "name": "OpenAI API"
         }
       }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "chatModel": "gpt-4o-mini",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Beoordeel dit coaching antwoord op empathie, relevantie, diepgang en veiligheid. Return ALLEEN JSON: {\"score\": 0-10, \"improved\": \"verbeterd antwoord of null\"}"
+            },
+            {
+              "role": "user",
+              "content": "=Gebruikersbericht: {{ $('Webhook').item.json.body.message }}\n\nAntwoord: {{ $('OpenAI Chat').item.json.message.content }}"
+            }
+          ]
+        },
+        "simplifyOutput": true,
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 600
+        }
+      },
+      "id": "evaluate-response",
+      "name": "Evaluate Response",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [1400, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = $('OpenAI Chat').item.json.message.content;\nconst crisis = $('Analyze Sentiment').item.json.crisis === true;\nlet evalResult = { score: 8, improved: null };\ntry { evalResult = JSON.parse($('Evaluate Response').item.json.message.content); } catch {}\n\nlet final = (evalResult.score < 7 && evalResult.improved)\n  ? evalResult.improved\n  : aiResponse;\n\nif (crisis) {\n  final += '\\n\\n---\\n\uD83C\uDD98 Bel 113 Zelfmoordpreventie: **0800-0113** (24/7 gratis, anoniem).';\n}\n\nreturn [{ json: {\n  finalResponse: final,\n  conversationId: $('Webhook').item.json.body.conversationId,\n  userId: $('Webhook').item.json.body.userId,\n  qualityScore: evalResult.score,\n  isCrisis: crisis\n}}];"
+      },
+      "id": "prepare-final-response",
+      "name": "Prepare Final Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1630, 300]
     },
     {
       "parameters": {
@@ -52,15 +165,15 @@
           "parameters": [
             {
               "name": "conversationId",
-              "value": "={{ $('Webhook').item.json.body.conversationId }}"
+              "value": "={{ $('Prepare Final Response').item.json.conversationId }}"
             },
             {
               "name": "content",
-              "value": "={{ $json.message.content }}"
+              "value": "={{ $('Prepare Final Response').item.json.finalResponse }}"
             },
             {
               "name": "userId",
-              "value": "={{ $('Webhook').item.json.body.userId }}"
+              "value": "={{ $('Prepare Final Response').item.json.userId }}"
             }
           ]
         },
@@ -70,7 +183,7 @@
       "name": "Send to Backend",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [750, 300]
+      "position": [1860, 300]
     },
     {
       "parameters": {
@@ -81,74 +194,48 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1000, 300]
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "userMessage",
-              "value": "={{ $json.body.message }}"
-            },
-            {
-              "name": "conversationHistory",
-              "value": "={{ $json.body.history }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "prepare-message",
-      "name": "Prepare Message",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [350, 300]
+      "position": [2090, 300]
     }
   ],
   "connections": {
     "Webhook": {
       "main": [
-        [
-          {
-            "node": "Prepare Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Get User Context", "type": "main", "index": 0 }]
       ]
     },
-    "Prepare Message": {
+    "Get User Context": {
       "main": [
-        [
-          {
-            "node": "OpenAI Chat",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Analyze Sentiment", "type": "main", "index": 0 }]
+      ]
+    },
+    "Analyze Sentiment": {
+      "main": [
+        [{ "node": "Build System Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build System Prompt": {
+      "main": [
+        [{ "node": "OpenAI Chat", "type": "main", "index": 0 }]
       ]
     },
     "OpenAI Chat": {
       "main": [
-        [
-          {
-            "node": "Send to Backend",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Evaluate Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Evaluate Response": {
+      "main": [
+        [{ "node": "Prepare Final Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Final Response": {
+      "main": [
+        [{ "node": "Send to Backend", "type": "main", "index": 0 }]
       ]
     },
     "Send to Backend": {
       "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
       ]
     }
   },

@@ -1,9 +1,13 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MessagesService } from '../messages/messages.service';
 import { MessagesGateway } from '../messages/messages.gateway';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
+import { SentimentService } from '../sentiment/sentiment.service';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { InsightsService } from '../insights/insights.service';
+import { RecommendationsService } from '../recommendations/recommendations.service';
 
 @ApiTags('webhooks')
 @Controller('webhooks')
@@ -13,6 +17,10 @@ export class WebhooksController {
     private messagesGateway: MessagesGateway,
     private prisma: PrismaService,
     private notificationService: NotificationService,
+    private sentimentService: SentimentService,
+    private analyticsService: AnalyticsService,
+    private insightsService: InsightsService,
+    private recommendationsService: RecommendationsService,
   ) {}
 
   // ─── n8n Data Endpoints ────────────────────────────────────────────
@@ -128,5 +136,68 @@ export class WebhooksController {
     }
 
     return { success: true };
+  }
+
+  // ─── n8n Coaching Chat Endpoints ───────────────────────────────────
+
+  @Get('user-context/:userId')
+  @ApiOperation({ summary: 'Get full user context for n8n coaching chat' })
+  async getUserContext(@Param('userId') userId: string) {
+    const [sentimentSummary, moodPatterns, goals, insights, recommendations, settings] = await Promise.all([
+      this.sentimentService.getSentimentSummary(userId).catch(() => null),
+      this.analyticsService.getMoodPatterns(userId).catch(() => null),
+      this.prisma.goal.findMany({ where: { userId, status: 'active' }, select: { title: true } }).catch(() => []),
+      this.insightsService.getInsights(userId).catch(() => []),
+      this.recommendationsService.getRecommendations(userId).catch(() => []),
+      this.prisma.settings.findUnique({ where: { userId }, select: { language: true } }).catch(() => null),
+    ]);
+
+    return {
+      language: settings?.language ?? 'nl',
+      sentiment: sentimentSummary
+        ? {
+            avgOverall: sentimentSummary.avgOverall,
+            dominantEmotion: sentimentSummary.dominantEmotion,
+            trend: sentimentSummary.trend,
+            crisisDetected: sentimentSummary.crisisDetected,
+          }
+        : null,
+      patterns: moodPatterns
+        ? {
+            bestDay: (moodPatterns as any).insights?.bestDay ?? null,
+            worstDay: (moodPatterns as any).insights?.worstDay ?? null,
+            correlation: (moodPatterns as any).correlation ?? null,
+          }
+        : null,
+      activeGoals: (goals as any[]).map((g) => g.title),
+      recentInsights: (insights as any[]).slice(0, 3).map((i) => ({ title: i.title, content: i.content })),
+      topRecommendation:
+        (recommendations as any[]).length > 0
+          ? { title: (recommendations as any[])[0].title, reason: (recommendations as any[])[0].reason }
+          : null,
+    };
+  }
+
+  @Post('analyze-message')
+  @ApiOperation({ summary: 'Analyze sentiment of a chat message for n8n' })
+  async analyzeMessage(
+    @Body() body: { userId: string; text: string; conversationId: string },
+  ) {
+    const result = await this.sentimentService.analyzeText(
+      body.userId,
+      body.text,
+      'message',
+      body.conversationId,
+    );
+
+    const dominant = Object.entries(result.emotions as unknown as Record<string, number>)
+      .sort((a, b) => b[1] - a[1])[0][0];
+
+    return {
+      overall: result.overall,
+      crisis: result.crisis,
+      dominant,
+      emotions: result.emotions,
+    };
   }
 }

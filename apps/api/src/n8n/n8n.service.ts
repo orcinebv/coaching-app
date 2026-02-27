@@ -9,8 +9,10 @@ export class N8nService {
   private readonly timeoutMs = 30000;
 
   constructor(private configService: ConfigService) {
-    const baseUrl = this.configService.get<string>('N8N_WEBHOOK_URL', 'http://n8n:5678');
-    this.webhookUrl = `${baseUrl}/webhook/coaching-chat`;
+    this.webhookUrl = this.configService.get<string>(
+      'N8N_COACHING_CHAT_WEBHOOK',
+      'http://n8n:5678/webhook/coaching-chat',
+    );
   }
 
   async sendToAI(
@@ -24,7 +26,7 @@ export class N8nService {
       return { fallback: true, message: 'AI service is not configured.' };
     }
 
-    const payload = { conversationId, message, userId, context };
+    const payload = { conversationId, message, userId, history: context };
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {

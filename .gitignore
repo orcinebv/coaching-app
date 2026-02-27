@@ -36,6 +36,7 @@ npm-debug.log*
 # Docker volumes
 postgres_data/
 n8n_data/
+docker/data/
 
 # Prisma
 prisma/*.db

@@ -33,7 +33,7 @@ import { InsightsModule } from './insights/insights.module';
       isGlobal: true,
       envFilePath: ['.env', path.resolve(__dirname, '../../../../.env')],
     }),
-    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 100 }] }),
+    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 1000 }] }),
     PrismaModule,
     RedisModule,
     CacheModule,
