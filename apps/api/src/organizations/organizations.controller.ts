@@ -22,7 +22,7 @@ export class OrganizationsController {
   constructor(private readonly service: OrganizationsService) {}
 
   @Post()
-  create(@Body() dto: CreateOrganizationDto, @Request() req) {
+  create(@Body() dto: CreateOrganizationDto, @Request() req: any) {
     return this.service.create(dto, req.user.userId);
   }
 
@@ -33,7 +33,7 @@ export class OrganizationsController {
   }
 
   @Get('me')
-  getMyOrganizations(@Request() req) {
+  getMyOrganizations(@Request() req: any) {
     return this.service.getMyOrganizations(req.user.userId);
   }
 

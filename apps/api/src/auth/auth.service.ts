@@ -93,7 +93,7 @@ export class AuthService {
     // Revoke old token and issue new pair
     await this.prisma.session.delete({ where: { id: session.id } });
 
-    const newAccessToken = this.generateToken(session.user.id, session.user.email);
+    const newAccessToken = this.generateToken(session.user.id, session.user.email, session.user.role);
     const newRefreshToken = await this.generateRefreshToken(session.user.id);
 
     return {

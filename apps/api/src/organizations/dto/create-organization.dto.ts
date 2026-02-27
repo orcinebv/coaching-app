@@ -5,7 +5,7 @@ export class CreateOrganizationDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -14,5 +14,5 @@ export class CreateOrganizationDto {
   @Matches(/^[a-z0-9-]+$/, {
     message: 'Slug may only contain lowercase letters, numbers, and hyphens',
   })
-  slug: string;
+  slug!: string;
 }
