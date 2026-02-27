@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { MoodPatterns, ProgressSummary } from '@coaching-app/shared/types';
@@ -443,6 +443,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class AnalyticsComponent implements OnInit {
   private api = inject(ApiService);
+  private cdr = inject(ChangeDetectorRef);
 
   loading = false;
   patterns: MoodPatterns | null = null;
@@ -461,6 +462,7 @@ export class AnalyticsComponent implements OnInit {
       console.error('Failed to load analytics', error);
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
