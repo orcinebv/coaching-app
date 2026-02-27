@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { firstValueFrom } from 'rxjs';
 
 interface UserSettings {
@@ -45,6 +47,12 @@ interface CoachingSettings {
             <path d="M2 12l10 5 10-5"/>
           </svg>
           Coaching
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'privacy'" (click)="activeTab.set('privacy'); loadAuditLog()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Privacy
         </button>
       </div>
 
@@ -112,6 +120,66 @@ interface CoachingSettings {
             <button class="btn-save" (click)="saveUserSettings()" [disabled]="saving()">
               {{ saving() ? 'Opslaan...' : 'Opslaan' }}
             </button>
+          </div>
+        </div>
+      }
+
+      @if (!loading() && activeTab() === 'privacy') {
+        <div class="settings-card">
+          <h2>Privacy & Gegevensbeheer</h2>
+          <p class="setting-desc" style="margin-bottom:24px">Beheer je persoonlijke gegevens conform de AVG/GDPR wetgeving.</p>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Mijn data downloaden</span>
+              <span class="setting-desc">Download al je persoonlijke data als JSON-bestand (check-ins, doelen, dagboek, gesprekken)</span>
+            </div>
+            <button class="btn-save" (click)="exportData()" [disabled]="exporting()">
+              {{ exporting() ? 'Exporteren...' : 'Download data' }}
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Opgeslagen gegevens</span>
+              <span class="setting-desc">We slaan de volgende categorieën op: profiel, check-ins, doelen, dagboek, gesprekken, oefeningen, inzichten</span>
+            </div>
+          </div>
+
+          <div class="setting-row setting-row--vertical">
+            <div class="setting-info">
+              <span class="setting-label">Recente activiteiten</span>
+              <span class="setting-desc">De laatste acties in jouw account</span>
+            </div>
+            <div style="width:100%;margin-top:12px">
+              <div *ngFor="let log of auditLog()" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+                <span style="color:#374151"><strong>{{ log.action }}</strong> {{ log.resource }}</span>
+                <span style="color:#9ca3af">{{ log.createdAt | date:'dd-MM-yyyy HH:mm' }}</span>
+              </div>
+              <div *ngIf="auditLog().length === 0" style="color:#9ca3af;font-size:13px;padding:8px 0">Geen activiteiten gevonden</div>
+            </div>
+          </div>
+
+          <div class="setting-row" style="margin-top:24px;padding-top:24px;border-top:2px solid #fee2e2">
+            <div class="setting-info">
+              <span class="setting-label" style="color:#dc2626">Account verwijderen</span>
+              <span class="setting-desc">Verwijder je account permanent. Al je data wordt geanonimiseerd. Dit kan niet ongedaan worden gemaakt.</span>
+            </div>
+            <button class="btn-delete" (click)="confirmDeleteAccount()">Account verwijderen</button>
+          </div>
+        </div>
+
+        <!-- Confirm Delete Dialog -->
+        <div *ngIf="showDeleteConfirm()" class="confirm-overlay">
+          <div class="confirm-dialog">
+            <h3>Account definitief verwijderen?</h3>
+            <p>Al je persoonlijke data wordt geanonimiseerd en je account wordt permanent verwijderd. Dit kan <strong>niet</strong> worden teruggedraaid.</p>
+            <div class="confirm-actions">
+              <button class="btn-cancel" (click)="showDeleteConfirm.set(false)">Annuleren</button>
+              <button class="btn-delete" (click)="deleteAccount()" [disabled]="deleting()">
+                {{ deleting() ? 'Verwijderen...' : 'Ja, verwijder mijn account' }}
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -546,16 +614,41 @@ interface CoachingSettings {
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    .btn-delete {
+      padding: 0.625rem 1.25rem;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-delete:disabled { opacity: 0.6; cursor: not-allowed; }
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .confirm-dialog { background: white; border-radius: 12px; padding: 32px; max-width: 440px; width: 90%; }
+    .confirm-dialog h3 { margin: 0 0 12px; font-size: 18px; color: #dc2626; }
+    .confirm-dialog p { margin: 0 0 24px; color: #374151; font-size: 14px; line-height: 1.6; }
+    .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+    .btn-cancel { padding: 0.625rem 1.25rem; background: white; border: 2px solid #d1d5db; border-radius: var(--radius); font-size: 0.875rem; cursor: pointer; }
   `],
 })
 export class SettingsComponent implements OnInit {
   protected Math = Math;
   private api = inject(ApiService);
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
-  activeTab = signal<'notifications' | 'coaching'>('notifications');
+  activeTab = signal<'notifications' | 'coaching' | 'privacy'>('notifications');
   loading = signal(true);
   saving = signal(false);
   saveSuccess = signal(false);
+  exporting = signal(false);
+  deleting = signal(false);
+  showDeleteConfirm = signal(false);
+  auditLog = signal<{ action: string; resource: string; createdAt: string }[]>([]);
 
   userSettings: UserSettings = {
     notifications: true,
@@ -645,6 +738,56 @@ export class SettingsComponent implements OnInit {
       this.showSuccess();
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async loadAuditLog(): Promise<void> {
+    try {
+      const logs = await firstValueFrom(
+        this.api.get<{ action: string; resource: string; createdAt: string }[]>('/users/me/audit-log?limit=10'),
+      );
+      this.auditLog.set(logs);
+    } catch {
+      // ignore
+    }
+  }
+
+  async exportData(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      const token = localStorage.getItem('token');
+      const { environment: env } = await import('../../../environments/environment');
+      const response = await fetch(`${env.apiUrl}/users/me/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mijn-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Export mislukt. Probeer het opnieuw.');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  confirmDeleteAccount(): void {
+    this.showDeleteConfirm.set(true);
+  }
+
+  async deleteAccount(): Promise<void> {
+    this.deleting.set(true);
+    try {
+      await firstValueFrom(this.api.delete('/users/me/account'));
+      this.auth.logout();
+    } catch {
+      alert('Verwijderen mislukt. Probeer het opnieuw.');
+    } finally {
+      this.deleting.set(false);
+      this.showDeleteConfirm.set(false);
     }
   }
 

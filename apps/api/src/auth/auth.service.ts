@@ -38,7 +38,7 @@ export class AuthService {
       data: { userId: user.id },
     });
 
-    const accessToken = this.generateToken(user.id, user.email);
+    const accessToken = this.generateToken(user.id, user.email, user.role);
     const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
@@ -49,6 +49,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        isOnboarded: user.isOnboarded,
       },
     };
   }
@@ -56,7 +57,7 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
-    const accessToken = this.generateToken(user.id, user.email);
+    const accessToken = this.generateToken(user.id, user.email, user.role);
     const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
@@ -67,6 +68,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        isOnboarded: user.isOnboarded,
       },
     };
   }
@@ -117,8 +119,12 @@ export class AuthService {
       where: { email },
     });
 
-    if (!user) {
+    if (!user || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -130,8 +136,8 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(userId: string, email: string): string {
-    const payload = { sub: userId, email };
+  private generateToken(userId: string, email: string, role: string): string {
+    const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);
   }
 

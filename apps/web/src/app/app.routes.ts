@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard, coachGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -76,5 +77,27 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/insights/insights.component').then((m) => m.InsightsComponent),
     canActivate: [authGuard],
+  },
+  {
+    path: 'onboarding',
+    loadComponent: () =>
+      import('./features/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./features/admin/admin.component').then((m) => m.AdminComponent),
+    canActivate: [authGuard, adminGuard],
+  },
+  {
+    path: 'coach',
+    loadComponent: () =>
+      import('./features/coach/coach.component').then((m) => m.CoachComponent),
+    canActivate: [authGuard, coachGuard],
+  },
+  {
+    path: '**',
+    redirectTo: '/dashboard',
   },
 ];

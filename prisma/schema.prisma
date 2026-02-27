@@ -7,13 +7,89 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  COACH
+  ADMIN
+}
+
+model Organization {
+  id          String             @id @default(uuid())
+  name        String
+  slug        String             @unique
+  plan        String             @default("free")
+  maxUsers    Int                @default(10)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  members     OrganizationUser[]
+  auditLogs   AuditLog[]
+
+  @@index([slug])
+}
+
+model OrganizationUser {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  coachId        String?
+  joinedAt       DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation("OrgMembers", fields: [userId], references: [id], onDelete: Cascade)
+  coach          User?        @relation("CoachRelation", fields: [coachId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([coachId])
+}
+
+model AuditLog {
+  id             String        @id @default(uuid())
+  userId         String
+  organizationId String?
+  action         String
+  resource       String
+  resourceId     String?
+  oldValue       String?
+  newValue       String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+model CoachNote {
+  id         String   @id @default(uuid())
+  coachId    String
+  coacheeId  String
+  content    String
+  isPrivate  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  coach      User     @relation("CoachNotes", fields: [coachId], references: [id], onDelete: Cascade)
+  coachee    User     @relation("CoacheeNotes", fields: [coacheeId], references: [id], onDelete: Cascade)
+
+  @@index([coachId])
+  @@index([coacheeId])
+}
+
 model User {
   id                  String               @id @default(uuid())
   email               String               @unique
   password            String
   name                String
-  role                String               @default("user")
+  role                Role                 @default(USER)
   avatar              String?
+  isActive            Boolean              @default(true)
+  isOnboarded         Boolean              @default(false)
+  deletedAt           DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   conversations       Conversation[]
@@ -30,6 +106,11 @@ model User {
   dailyPrompts        DailyPrompt[]
   recommendations     Recommendation[]
   aiUsage             AiUsage[]
+  auditLogs           AuditLog[]
+  organizations       OrganizationUser[]   @relation("OrgMembers")
+  coachedUsers        OrganizationUser[]   @relation("CoachRelation")
+  coachNotes          CoachNote[]          @relation("CoachNotes")
+  coacheeNotes        CoachNote[]          @relation("CoacheeNotes")
 }
 
 model Conversation {

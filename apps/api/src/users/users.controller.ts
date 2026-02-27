@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Body, UseGuards, Request, Res, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
@@ -47,5 +48,35 @@ export class UsersController {
   @ApiOperation({ summary: 'Update coaching settings' })
   async updateCoachingSettings(@Request() req: any, @Body() dto: UpdateCoachingSettingsDto) {
     return this.usersService.updateCoachingSettings(req.user.userId, dto);
+  }
+
+  @Patch('me/onboarding-complete')
+  @ApiOperation({ summary: 'Mark onboarding as completed' })
+  async completeOnboarding(@Request() req: any) {
+    return this.usersService.completeOnboarding(req.user.userId);
+  }
+
+  @Get('me/export')
+  @ApiOperation({ summary: 'Export all personal data (GDPR)' })
+  async exportData(@Request() req: any, @Res() res: Response) {
+    const data = await this.usersService.exportMyData(req.user.userId);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="mijn-data-${new Date().toISOString().split('T')[0]}.json"`);
+    res.send(JSON.stringify(data, null, 2));
+  }
+
+  @Delete('me/account')
+  @ApiOperation({ summary: 'Delete account and anonymize data (GDPR)' })
+  async deleteAccount(@Request() req: any) {
+    return this.usersService.deleteMyAccount(req.user.userId);
+  }
+
+  @Get('me/audit-log')
+  @ApiOperation({ summary: 'Get personal activity audit log' })
+  async getAuditLog(
+    @Request() req: any,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ) {
+    return this.usersService.getMyAuditLog(req.user.userId, limit);
   }
 }

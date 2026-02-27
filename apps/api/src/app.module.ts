@@ -26,6 +26,10 @@ import { SentimentModule } from './sentiment/sentiment.module';
 import { CoachingPromptsModule } from './coaching-prompts/coaching-prompts.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { InsightsModule } from './insights/insights.module';
+import { AdminModule } from './admin/admin.module';
+import { CoachModule } from './coach/coach.module';
+import { OrganizationsModule } from './organizations/organizations.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -57,6 +61,10 @@ import { InsightsModule } from './insights/insights.module';
     CoachingPromptsModule,
     RecommendationsModule,
     InsightsModule,
+    AdminModule,
+    CoachModule,
+    OrganizationsModule,
+    AuditModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
