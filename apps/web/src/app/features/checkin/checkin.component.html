@@ -1,0 +1,201 @@
+    <div class="checkin-page">
+      <div class="checkin-container">
+        <section class="new-checkin card">
+          <h2>Nieuwe check-in</h2>
+          <p class="section-desc">Hoe voel je je vandaag?</p>
+
+          @if (successMessage) {
+            <div class="alert alert-success">{{ successMessage }}</div>
+          }
+          @if (errorMessage) {
+            <div class="alert alert-error">{{ errorMessage }}</div>
+          }
+
+          <form [formGroup]="checkinForm" (ngSubmit)="onSubmit()">
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>Stemming</label>
+                <span class="slider-display">
+                  <span class="slider-emoji">{{ getMoodEmoji(checkinForm.get('mood')?.value) }}</span>
+                  <span class="slider-value">{{ checkinForm.get('mood')?.value }}/10</span>
+                </span>
+              </div>
+              <input type="range" min="1" max="10" formControlName="mood" class="range-slider mood-slider" />
+              <div class="slider-labels">
+                <span>Laag</span>
+                <span>Hoog</span>
+              </div>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>Energie</label>
+                <span class="slider-display">
+                  <span class="slider-emoji">{{ getEnergyEmoji(checkinForm.get('energy')?.value) }}</span>
+                  <span class="slider-value">{{ checkinForm.get('energy')?.value }}/10</span>
+                </span>
+              </div>
+              <input type="range" min="1" max="10" formControlName="energy" class="range-slider energy-slider" />
+              <div class="slider-labels">
+                <span>Laag</span>
+                <span>Hoog</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="notes">Notities</label>
+              <textarea id="notes" formControlName="notes" placeholder="Hoe voel je je? Wat houdt je bezig?" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="goals">Doelen</label>
+              <textarea id="goals" formControlName="goals" placeholder="Wat wil je vandaag bereiken?" rows="3"></textarea>
+            </div>
+
+            <!-- Health section toggle -->
+            <div class="health-toggle-row">
+              <button type="button" class="health-toggle-btn" (click)="showHealthSection.set(!showHealthSection())">
+                {{ showHealthSection() ? '\u25B2' : '\u25BC' }} Gezondheid bijhouden
+                <span class="health-badge">optioneel</span>
+              </button>
+            </div>
+
+            @if (showHealthSection()) {
+              <div class="health-section">
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <label>Slaapuren</label>
+                    <span class="slider-display">
+                      <span class="slider-emoji">{{ getSleepEmoji(checkinForm.get('sleepHours')?.value) }}</span>
+                      <span class="slider-value">{{ checkinForm.get('sleepHours')?.value }}u</span>
+                    </span>
+                  </div>
+                  <input type="range" min="0" max="12" step="0.5" formControlName="sleepHours" class="range-slider health-slider" />
+                  <div class="slider-labels"><span>0u</span><span>12u</span></div>
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <label>Slaapkwaliteit</label>
+                    <span class="slider-display">
+                      <span class="slider-value">{{ checkinForm.get('sleepQuality')?.value }}/10</span>
+                    </span>
+                  </div>
+                  <input type="range" min="1" max="10" formControlName="sleepQuality" class="range-slider health-slider" />
+                  <div class="slider-labels"><span>Slecht</span><span>Uitstekend</span></div>
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <label>Glazen water</label>
+                    <span class="slider-display">
+                      <span class="slider-emoji">💧</span>
+                      <span class="slider-value">{{ checkinForm.get('waterGlasses')?.value }}</span>
+                    </span>
+                  </div>
+                  <input type="range" min="0" max="15" formControlName="waterGlasses" class="range-slider health-slider" />
+                  <div class="slider-labels"><span>0</span><span>15</span></div>
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <label>Beweging (min)</label>
+                    <span class="slider-display">
+                      <span class="slider-emoji">🏃</span>
+                      <span class="slider-value">{{ checkinForm.get('activityMinutes')?.value }}min</span>
+                    </span>
+                  </div>
+                  <input type="range" min="0" max="180" step="5" formControlName="activityMinutes" class="range-slider health-slider" />
+                  <div class="slider-labels"><span>0</span><span>180min</span></div>
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <label>Stressniveau</label>
+                    <span class="slider-display">
+                      <span class="slider-emoji">{{ getStressEmoji(checkinForm.get('stressLevel')?.value) }}</span>
+                      <span class="slider-value">{{ checkinForm.get('stressLevel')?.value }}/10</span>
+                    </span>
+                  </div>
+                  <input type="range" min="1" max="10" formControlName="stressLevel" class="range-slider health-slider" />
+                  <div class="slider-labels"><span>Laag</span><span>Hoog</span></div>
+                </div>
+              </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="isSubmitting">
+              @if (isSubmitting) {
+                <span class="spinner"></span>
+                Opslaan...
+              } @else {
+                Opslaan
+              }
+            </button>
+          </form>
+        </section>
+
+        <section class="history-section">
+          <h2>Check-in Geschiedenis</h2>
+          <div class="history-list">
+            @for (checkin of checkInStore.checkIns(); track checkin.id) {
+              <div class="history-item card">
+                <div class="history-header">
+                  <span class="history-date">{{ checkin.createdAt | date:'EEEE, d MMM y' }}</span>
+                </div>
+                <div class="history-metrics">
+                  <div class="history-metric">
+                    <span class="metric-emoji">{{ getMoodEmoji(checkin.mood) }}</span>
+                    <div class="metric-info">
+                      <span class="metric-label">Stemming</span>
+                      <div class="metric-bar">
+                        <div class="metric-fill mood-fill" [style.width.%]="checkin.mood * 10"></div>
+                      </div>
+                      <span class="metric-value">{{ checkin.mood }}/10</span>
+                    </div>
+                  </div>
+                  <div class="history-metric">
+                    <span class="metric-emoji">{{ getEnergyEmoji(checkin.energy) }}</span>
+                    <div class="metric-info">
+                      <span class="metric-label">Energie</span>
+                      <div class="metric-bar">
+                        <div class="metric-fill energy-fill" [style.width.%]="checkin.energy * 10"></div>
+                      </div>
+                      <span class="metric-value">{{ checkin.energy }}/10</span>
+                    </div>
+                  </div>
+                </div>
+                @if (checkin.sleepHours !== null && checkin.sleepHours !== undefined || checkin.waterGlasses !== null && checkin.waterGlasses !== undefined || checkin.activityMinutes !== null && checkin.activityMinutes !== undefined) {
+                  <div class="health-chips">
+                    @if (checkin.sleepHours !== null && checkin.sleepHours !== undefined) {
+                      <span class="health-chip">😴 {{ checkin.sleepHours }}u slaap</span>
+                    }
+                    @if (checkin.waterGlasses !== null && checkin.waterGlasses !== undefined) {
+                      <span class="health-chip">💧 {{ checkin.waterGlasses }} glazen</span>
+                    }
+                    @if (checkin.activityMinutes !== null && checkin.activityMinutes !== undefined) {
+                      <span class="health-chip">🏃 {{ checkin.activityMinutes }}min</span>
+                    }
+                  </div>
+                }
+                @if (checkin.notes) {
+                  <div class="history-notes">
+                    <strong>Notities:</strong> {{ checkin.notes }}
+                  </div>
+                }
+                @if (checkin.goals) {
+                  <div class="history-goals">
+                    <strong>Doelen:</strong> {{ checkin.goals }}
+                  </div>
+                }
+              </div>
+            } @empty {
+              <div class="card empty-state-base">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-title">Nog geen check-ins</div>
+                <div class="empty-state-desc">Maak je eerste check-in hierboven aan!</div>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>

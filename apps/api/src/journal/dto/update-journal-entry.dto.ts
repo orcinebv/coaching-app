@@ -18,4 +18,21 @@ export class UpdateJournalEntryDto {
   @IsArray()
   @IsOptional()
   tags?: string[];
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  emotion?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 100 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  sliderValue?: number;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsOptional()
+  factors?: string[];
 }

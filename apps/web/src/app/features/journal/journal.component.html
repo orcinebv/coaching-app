@@ -1,0 +1,308 @@
+<div class="journal-page">
+  <div class="page-header">
+    <h1>Dagboek</h1>
+    <p>Leg vast hoe je je voelt — geïnspireerd door de iPhone Gezondheid-app</p>
+  </div>
+
+  <div class="journal-layout">
+    <!-- LINKS: Stap-gebaseerde invoer -->
+    <div class="new-entry card">
+
+      <!-- Stap indicator -->
+      <div class="step-indicator">
+        @for (s of steps; track s.num) {
+          <div class="step-item" [class.step-done]="step() > s.num" [class.step-active]="step() === s.num">
+            <div class="step-circle">
+              @if (step() > s.num) { ✓ } @else { {{ s.num }} }
+            </div>
+            <span class="step-label">{{ s.label }}</span>
+          </div>
+          @if (s.num < 4) {
+            <div class="step-connector" [class.step-connector-done]="step() > s.num"></div>
+          }
+        }
+      </div>
+
+      @if (successMessage) {
+        <div class="alert alert-success">{{ successMessage }}</div>
+      }
+      @if (errorMessage) {
+        <div class="alert alert-error">{{ errorMessage }}</div>
+      }
+
+      <!-- Stap 1: Emotie kiezen -->
+      @if (step() === 1) {
+        <div class="step-content">
+          <h3 class="step-title">Hoe voel je je?</h3>
+          <p class="step-subtitle">Kies de emotie die het beste bij je past</p>
+
+          @for (cat of emotionCategories; track cat.type) {
+            <div class="emotion-category">
+              <div class="cat-header" [class]="'cat-' + cat.type">{{ cat.label }}</div>
+              <div class="emotion-grid">
+                @for (emotion of cat.emotions; track emotion) {
+                  <button
+                    type="button"
+                    class="emotion-btn"
+                    [class]="'emotion-' + cat.type"
+                    [class.emotion-selected]="selectedEmotion() === emotion"
+                    (click)="selectEmotion(emotion)"
+                  >{{ emotion }}</button>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="step-nav">
+            <span></span>
+            <button class="btn btn-primary" [disabled]="!selectedEmotion()" (click)="goToStep(2)">
+              Volgende →
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Stap 2: Aangenaam/Onaangenaam slider -->
+      @if (step() === 2) {
+        <div class="step-content">
+          <h3 class="step-title">Hoe aangenaam voelt dit?</h3>
+          <p class="step-subtitle">Je voelt je: <strong>{{ selectedEmotion() }}</strong></p>
+
+          <div class="slider-section">
+            <div class="slider-value-row">
+              <span class="slider-num">{{ sliderValue() }}/100</span>
+              <span class="slider-tag" [class]="'tag-' + getSliderClass()">{{ getSliderLabel() }}</span>
+            </div>
+            <div class="slider-track">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="sliderValue()"
+                (input)="sliderValue.set(+$any($event.target).value)"
+                class="mood-slider"
+              />
+            </div>
+            <div class="slider-labels">
+              <span>Onaangenaam</span>
+              <span>Neutraal</span>
+              <span>Aangenaam</span>
+            </div>
+          </div>
+
+          <div class="step-nav">
+            <button class="btn btn-secondary" (click)="goToStep(1)">← Terug</button>
+            <button class="btn btn-primary" (click)="goToStep(3)">Volgende →</button>
+          </div>
+        </div>
+      }
+
+      <!-- Stap 3: Factoren (optioneel) -->
+      @if (step() === 3) {
+        <div class="step-content">
+          <h3 class="step-title">Wat speelt er mee?</h3>
+          <p class="step-subtitle">Optioneel — kies wat invloed heeft op je gevoel</p>
+
+          <div class="factors-grid">
+            @for (factor of availableFactors; track factor) {
+              <button
+                type="button"
+                class="factor-btn"
+                [class.factor-selected]="selectedFactors().includes(factor)"
+                (click)="toggleFactor(factor)"
+              >{{ factor }}</button>
+            }
+          </div>
+
+          <div class="step-nav">
+            <button class="btn btn-secondary" (click)="goToStep(2)">← Terug</button>
+            <button class="btn btn-primary" (click)="goToStep(4)">Volgende →</button>
+          </div>
+        </div>
+      }
+
+      <!-- Stap 4: Notitie (optioneel) -->
+      @if (step() === 4) {
+        <div class="step-content">
+          <h3 class="step-title">Wil je iets toevoegen?</h3>
+          <p class="step-subtitle">Optioneel — schrijf een korte notitie</p>
+
+          <div class="form-group">
+            <textarea
+              [(ngModel)]="noteValue"
+              placeholder="Wat gaat er door je heen..."
+              rows="4"
+              maxlength="500"
+            ></textarea>
+            <div class="char-count">{{ noteValue.length }}/500</div>
+          </div>
+
+          <div class="step-nav">
+            <button class="btn btn-secondary" (click)="goToStep(3)">← Terug</button>
+            <button class="btn btn-primary" [disabled]="isSubmitting" (click)="onSubmit()">
+              @if (isSubmitting) { <span class="spinner spinner-sm"></span> }
+              Opslaan
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- RECHTS: Entries lijst -->
+    <div class="entries-section">
+      <div class="section-header">
+        <h2>Eerdere Entries</h2>
+        <div class="header-actions">
+          <span class="count-badge">{{ journalStore.total() }} totaal</span>
+          <button
+            class="btn-ghost-sm filter-toggle"
+            [class.filter-toggle-active]="showFilters()"
+            (click)="showFilters.set(!showFilters())"
+          >
+            Filteren {{ hasActiveFilters() ? '●' : '' }}
+          </button>
+        </div>
+      </div>
+
+      @if (showFilters()) {
+        <div class="filter-bar card">
+          <div class="filter-panel">
+            <div class="filter-group">
+              <label class="filter-label">Emotiecategorie</label>
+              <div class="cat-filter">
+                <button class="cat-filter-btn" [class.cat-filter-active]="filterEmotionCat() === null" (click)="filterEmotionCat.set(null)">Alle</button>
+                <button class="cat-filter-btn cat-filter-pos" [class.cat-filter-active]="filterEmotionCat() === 'positive'" (click)="filterEmotionCat.set('positive')">Positief</button>
+                <button class="cat-filter-btn cat-filter-neu" [class.cat-filter-active]="filterEmotionCat() === 'neutral'" (click)="filterEmotionCat.set('neutral')">Neutraal</button>
+                <button class="cat-filter-btn cat-filter-neg" [class.cat-filter-active]="filterEmotionCat() === 'negative'" (click)="filterEmotionCat.set('negative')">Negatief</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Van</label>
+              <input type="date" class="filter-input" [ngModel]="filterDateFrom()" (ngModelChange)="filterDateFrom.set($event || null)" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Tot</label>
+              <input type="date" class="filter-input" [ngModel]="filterDateTo()" (ngModelChange)="filterDateTo.set($event || null)" />
+            </div>
+          </div>
+          @if (hasActiveFilters()) {
+            <button class="btn-ghost-sm" (click)="clearFilters()">Wis filters</button>
+          }
+        </div>
+      }
+
+      @if (journalStore.loading()) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+        </div>
+      }
+
+      <div class="entries-list">
+        @for (entry of filteredEntries(); track entry.id) {
+          <div class="card entry-card">
+            @if (editingId() === entry.id) {
+              <!-- BEWERKEN mode -->
+              <div class="edit-mode">
+                <div class="edit-section">
+                  <label class="edit-label">Emotie</label>
+                  @for (cat of emotionCategories; track cat.type) {
+                    <div class="emotion-grid emotion-grid-sm">
+                      @for (emotion of cat.emotions; track emotion) {
+                        <button type="button" class="emotion-btn emotion-btn-sm"
+                          [class]="'emotion-' + cat.type"
+                          [class.emotion-selected]="editEmotion() === emotion"
+                          (click)="selectEditEmotion(emotion)"
+                        >{{ emotion }}</button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="edit-section">
+                  <label class="edit-label">Schaal: {{ editSliderValue() }}/100 — {{ getSliderLabel(editSliderValue()) }}</label>
+                  <input type="range" min="0" max="100" [value]="editSliderValue()"
+                    (input)="editSliderValue.set(+$any($event.target).value)"
+                    class="mood-slider" />
+                </div>
+
+                <div class="edit-section">
+                  <label class="edit-label">Factoren</label>
+                  <div class="factors-grid factors-grid-sm">
+                    @for (factor of availableFactors; track factor) {
+                      <button type="button" class="factor-btn"
+                        [class.factor-selected]="editFactors().includes(factor)"
+                        (click)="toggleEditFactor(factor)"
+                      >{{ factor }}</button>
+                    }
+                  </div>
+                </div>
+
+                <div class="edit-section">
+                  <label class="edit-label">Notitie</label>
+                  <textarea class="edit-textarea" [(ngModel)]="editNoteValue" rows="3" maxlength="500"></textarea>
+                </div>
+
+                <div class="edit-actions">
+                  <button class="btn btn-secondary btn-sm" (click)="cancelEdit()" [disabled]="isUpdating()">Annuleer</button>
+                  <button class="btn btn-primary btn-sm" (click)="saveEdit()" [disabled]="isUpdating()">
+                    @if (isUpdating()) { <span class="spinner spinner-sm"></span> }
+                    Opslaan
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- WEERGAVE mode -->
+              <div class="entry-header">
+                <span class="entry-date">{{ entry.createdAt | date:'EEE d MMM y' }}</span>
+                @if (entry.emotion) {
+                  <span class="entry-emotion" [class]="'emotion-badge-' + getEmotionType(entry.emotion)">
+                    {{ entry.emotion }}
+                  </span>
+                }
+              </div>
+
+              @if (entry.sliderValue !== null && entry.sliderValue !== undefined) {
+                <div class="entry-slider">
+                  <div class="entry-slider-bar">
+                    <div class="entry-slider-fill"
+                      [class]="'fill-' + getSliderClass(entry.sliderValue)"
+                      [style.width.%]="entry.sliderValue">
+                    </div>
+                  </div>
+                  <span class="entry-slider-label" [class]="'tag-' + getSliderClass(entry.sliderValue)">
+                    {{ getSliderLabel(entry.sliderValue) }} ({{ entry.sliderValue }})
+                  </span>
+                </div>
+              }
+
+              @if (entry.factors && entry.factors.length > 0) {
+                <div class="entry-factors">
+                  @for (factor of entry.factors; track factor) {
+                    <span class="factor-chip">{{ factor }}</span>
+                  }
+                </div>
+              }
+
+              @if (entry.content) {
+                <div class="entry-content">{{ entry.content }}</div>
+              }
+
+              <div class="entry-actions">
+                <button class="btn-ghost-sm" (click)="startEdit(entry)">Bewerken</button>
+                <button class="btn-ghost-sm" (click)="deleteEntry(entry.id)">Verwijder</button>
+              </div>
+            }
+          </div>
+        } @empty {
+          @if (!journalStore.loading()) {
+            <div class="empty-state card">
+              <div class="empty-icon">💭</div>
+              <h3>Begin met vastleggen</h3>
+              <p>Kies een emotie aan de linkerkant om je eerste entry toe te voegen.</p>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -20,6 +20,14 @@ const DAILY_PROMPTS = [
   'Hoe heb je vandaag grenzen gesteld of bewaakt?',
 ];
 
+function parseEntry(e: any) {
+  return {
+    ...e,
+    tags: JSON.parse(e.tags || '[]'),
+    factors: JSON.parse(e.factors || '[]'),
+  };
+}
+
 @Injectable()
 export class JournalService {
   constructor(private prisma: PrismaService) {}
@@ -30,15 +38,19 @@ export class JournalService {
   }
 
   async create(userId: string, dto: CreateJournalEntryDto) {
-    return this.prisma.journalEntry.create({
+    const entry = await this.prisma.journalEntry.create({
       data: {
         userId,
         prompt: dto.prompt,
         content: dto.content,
         mood: dto.mood,
         tags: JSON.stringify(dto.tags || []),
+        emotion: dto.emotion,
+        sliderValue: dto.sliderValue,
+        factors: JSON.stringify(dto.factors || []),
       },
     });
+    return parseEntry(entry);
   }
 
   async findAllByUser(userId: string, page = 1, limit = 20) {
@@ -53,7 +65,7 @@ export class JournalService {
       this.prisma.journalEntry.count({ where: { userId } }),
     ]);
     return {
-      data: entries.map(e => ({ ...e, tags: JSON.parse(e.tags) })),
+      data: entries.map(parseEntry),
       total,
       page,
       limit,
@@ -63,7 +75,7 @@ export class JournalService {
   async findOne(id: string, userId: string) {
     const entry = await this.prisma.journalEntry.findFirst({ where: { id, userId } });
     if (!entry) throw new NotFoundException('Journal entry not found');
-    return { ...entry, tags: JSON.parse(entry.tags) };
+    return parseEntry(entry);
   }
 
   async update(id: string, userId: string, dto: UpdateJournalEntryDto) {
@@ -74,9 +86,12 @@ export class JournalService {
         content: dto.content,
         mood: dto.mood,
         tags: dto.tags ? JSON.stringify(dto.tags) : undefined,
+        emotion: dto.emotion,
+        sliderValue: dto.sliderValue,
+        factors: dto.factors ? JSON.stringify(dto.factors) : undefined,
       },
     });
-    return { ...updated, tags: JSON.parse(updated.tags) };
+    return parseEntry(updated);
   }
 
   async remove(id: string, userId: string) {

@@ -1,12 +1,13 @@
 import { computed, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
 import { ApiService } from '../services/api.service';
-import { CheckIn, CheckInStats } from '@coaching-app/shared/types';
+import { CheckIn, CheckInStats, HealthSummary } from '@coaching-app/shared/types';
 import { firstValueFrom, timeout } from 'rxjs';
 
 export interface CheckInState {
   checkIns: CheckIn[];
   stats: CheckInStats | null;
+  healthSummary: HealthSummary[];
   loading: boolean;
   error: string | null;
 }
@@ -14,6 +15,7 @@ export interface CheckInState {
 const initialState: CheckInState = {
   checkIns: [],
   stats: null,
+  healthSummary: [],
   loading: false,
   error: null,
 };
@@ -49,7 +51,17 @@ export const CheckInStore = signalStore(
         }
       },
 
-      async createCheckIn(data: { mood: number; energy: number; notes?: string; goals?: string }): Promise<CheckIn | null> {
+      async createCheckIn(data: {
+        mood: number;
+        energy: number;
+        notes?: string;
+        goals?: string;
+        sleepHours?: number;
+        sleepQuality?: number;
+        waterGlasses?: number;
+        activityMinutes?: number;
+        stressLevel?: number;
+      }): Promise<CheckIn | null> {
         patchState(store, { error: null });
         try {
           const checkIn = await firstValueFrom(
@@ -72,6 +84,15 @@ export const CheckInStore = signalStore(
           patchState(store, { stats });
         } catch (error: any) {
           patchState(store, { error: error?.error?.message || 'Failed to load stats' });
+        }
+      },
+
+      async loadHealthSummary(): Promise<void> {
+        try {
+          const healthSummary = await firstValueFrom(api.get<HealthSummary[]>('/checkins/health-summary'));
+          patchState(store, { healthSummary });
+        } catch (error: any) {
+          patchState(store, { error: error?.error?.message || 'Failed to load health summary' });
         }
       },
     };

@@ -20,6 +20,25 @@ const initialState: JournalState = {
   error: null,
 };
 
+export interface CreateEntryData {
+  prompt?: string;
+  content?: string;
+  mood?: number;
+  tags?: string[];
+  emotion?: string;
+  sliderValue?: number;
+  factors?: string[];
+}
+
+export interface UpdateEntryData {
+  content?: string;
+  mood?: number;
+  tags?: string[];
+  emotion?: string;
+  sliderValue?: number;
+  factors?: string[];
+}
+
 export const JournalStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
@@ -45,7 +64,7 @@ export const JournalStore = signalStore(
         } catch { /* silent fail */ }
       },
 
-      async createEntry(data: { prompt?: string; content: string; mood?: number; tags?: string[] }): Promise<JournalEntry | null> {
+      async createEntry(data: CreateEntryData): Promise<JournalEntry | null> {
         patchState(store, { error: null });
         try {
           const entry = await firstValueFrom(api.post<JournalEntry>('/journal', data).pipe(timeout(15000)));
@@ -58,6 +77,25 @@ export const JournalStore = signalStore(
           const message = error?.name === 'TimeoutError'
             ? 'Verzoek verlopen. Probeer opnieuw.'
             : error?.error?.message || 'Opslaan mislukt';
+          patchState(store, { error: message });
+          return null;
+        }
+      },
+
+      async updateEntry(id: string, data: UpdateEntryData): Promise<JournalEntry | null> {
+        patchState(store, { error: null });
+        try {
+          const updated = await firstValueFrom(
+            api.patch<JournalEntry>(`/journal/${id}`, data).pipe(timeout(15000))
+          );
+          patchState(store, {
+            entries: store.entries().map(e => e.id === id ? updated : e),
+          });
+          return updated;
+        } catch (error: any) {
+          const message = error?.name === 'TimeoutError'
+            ? 'Verzoek verlopen. Probeer opnieuw.'
+            : error?.error?.message || 'Bijwerken mislukt';
           patchState(store, { error: message });
           return null;
         }

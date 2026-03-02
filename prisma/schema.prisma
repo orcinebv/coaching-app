@@ -134,14 +134,19 @@ model Message {
 }
 
 model CheckIn {
-  id        String   @id @default(uuid())
-  userId    String
-  mood      Int
-  energy    Int
-  notes     String?
-  goals     String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  id              String   @id @default(uuid())
+  userId          String
+  mood            Int
+  energy          Int
+  notes           String?
+  goals           String?
+  sleepHours      Float?
+  sleepQuality    Int?
+  waterGlasses    Int?
+  activityMinutes Int?
+  stressLevel     Int?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
 }
 
 model Settings {
@@ -213,15 +218,18 @@ model Goal {
 }
 
 model JournalEntry {
-  id        String   @id @default(uuid())
-  userId    String
-  prompt    String?
-  content   String
-  mood      Int?
-  tags      String   @default("[]")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  userId      String
+  prompt      String?
+  content     String?
+  mood        Int?
+  tags        String   @default("[]")
+  emotion     String?
+  sliderValue Int?
+  factors     String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

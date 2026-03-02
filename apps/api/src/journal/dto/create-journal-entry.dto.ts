@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min, Max, IsArray } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsInt, Min, Max, IsArray } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateJournalEntryDto {
   @ApiPropertyOptional()
@@ -7,10 +7,10 @@ export class CreateJournalEntryDto {
   @IsOptional()
   prompt?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  content!: string;
+  @IsOptional()
+  content?: string;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 10 })
   @IsInt()
@@ -23,4 +23,21 @@ export class CreateJournalEntryDto {
   @IsArray()
   @IsOptional()
   tags?: string[];
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  emotion?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 100 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  sliderValue?: number;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsOptional()
+  factors?: string[];
 }

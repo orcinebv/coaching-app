@@ -88,7 +88,7 @@ export class ReportsService {
         },
         recentJournal: journalEntries.slice(0, 3).map(e => ({
           date: e.createdAt,
-          preview: e.content.substring(0, 100),
+          preview: (e.content ?? e.emotion ?? '').substring(0, 100),
         })),
         exerciseHighlights: exerciseCompletions.slice(0, 5).map(c => ({
           title: c.exercise.title,

@@ -481,6 +481,11 @@ $breakpoint-xl: 1280px;
   border-top-color: var(--primary);
 }
 
+.spinner-sm {
+  width: 12px;
+  height: 12px;
+}
+
 // ─── Section / Page header ───────────────────────────────────────────────────
 
 .page-header {
@@ -505,4 +510,129 @@ $breakpoint-xl: 1280px;
   height: 1px;
   background: var(--border);
   margin: 1.5rem 0;
+}
+
+// ─── Skeleton loading utilities ──────────────────────────────────────────────
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius);
+}
+
+.skeleton-text {
+  height: 0.875rem;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.skeleton-title {
+  height: 1.25rem;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.skeleton-card {
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius);
+  min-height: 80px;
+}
+
+.skeleton-stat {
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius);
+  min-height: 100px;
+}
+
+.skeleton-chart {
+  background: linear-gradient(to right, var(--border) 8%, var(--surface-hover) 18%, var(--border) 33%);
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius);
+  min-height: 200px;
+}
+
+// ─── Toast notifications ──────────────────────────────────────────────────────
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+  min-width: 240px;
+  max-width: 360px;
+  animation: slide-in 0.2s ease;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-success {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.toast-error {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.toast-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+// ─── Empty state utilities ───────────────────────────────────────────────────
+.empty-state-base {
+  text-align: center;
+  padding: 2.5rem 2rem;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.375rem;
+}
+
+.empty-state-desc {
+  font-size: 0.8125rem;
+  color: var(--text-light);
+  max-width: 320px;
+  margin: 0 auto;
+  line-height: 1.5;
 }

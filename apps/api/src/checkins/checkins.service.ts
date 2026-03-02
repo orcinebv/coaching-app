@@ -46,6 +46,11 @@ export class CheckInsService {
         energy: createCheckInDto.energy,
         notes: createCheckInDto.notes,
         goals: createCheckInDto.goals,
+        sleepHours: createCheckInDto.sleepHours,
+        sleepQuality: createCheckInDto.sleepQuality,
+        waterGlasses: createCheckInDto.waterGlasses,
+        activityMinutes: createCheckInDto.activityMinutes,
+        stressLevel: createCheckInDto.stressLevel,
       },
     });
   }
@@ -235,6 +240,58 @@ export class CheckInsService {
       },
       orderBy: { createdAt: 'asc' },
     });
+  }
+
+  async getHealthSummary(userId: string) {
+    const checkIns = await this.prisma.checkIn.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const weeklyData = new Map<string, {
+      sleepHours: number[];
+      sleepQuality: number[];
+      waterGlasses: number[];
+      activityMinutes: number[];
+      stressLevel: number[];
+      count: number;
+    }>();
+
+    for (const checkIn of checkIns) {
+      const date = new Date(checkIn.createdAt);
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weeklyData.has(weekKey)) {
+        weeklyData.set(weekKey, {
+          sleepHours: [], sleepQuality: [], waterGlasses: [],
+          activityMinutes: [], stressLevel: [], count: 0,
+        });
+      }
+
+      const week = weeklyData.get(weekKey)!;
+      week.count++;
+      if (checkIn.sleepHours !== null && checkIn.sleepHours !== undefined) week.sleepHours.push(checkIn.sleepHours);
+      if (checkIn.sleepQuality !== null && checkIn.sleepQuality !== undefined) week.sleepQuality.push(checkIn.sleepQuality);
+      if (checkIn.waterGlasses !== null && checkIn.waterGlasses !== undefined) week.waterGlasses.push(checkIn.waterGlasses);
+      if (checkIn.activityMinutes !== null && checkIn.activityMinutes !== undefined) week.activityMinutes.push(checkIn.activityMinutes);
+      if (checkIn.stressLevel !== null && checkIn.stressLevel !== undefined) week.stressLevel.push(checkIn.stressLevel);
+    }
+
+    const avg = (arr: number[]) => arr.length > 0
+      ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10
+      : null;
+
+    return Array.from(weeklyData.entries()).map(([week, data]) => ({
+      week,
+      avgSleepHours: avg(data.sleepHours),
+      avgSleepQuality: avg(data.sleepQuality),
+      avgWaterGlasses: avg(data.waterGlasses),
+      avgActivityMinutes: avg(data.activityMinutes),
+      avgStressLevel: avg(data.stressLevel),
+      count: data.count,
+    }));
   }
 
   async getAggregateStats(userId: string) {

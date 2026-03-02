@@ -77,6 +77,12 @@ export class CheckInsController {
     return this.checkInsService.getCheckInsForConversation(conversationId, req.user.userId);
   }
 
+  @Get('health-summary')
+  @ApiOperation({ summary: 'Get health metrics summary grouped by week' })
+  async getHealthSummary(@Request() req: any) {
+    return this.checkInsService.getHealthSummary(req.user.userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific check-in' })
   async findOne(@Request() req: any, @Param('id') id: string) {

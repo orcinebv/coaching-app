@@ -5,6 +5,11 @@ export interface CheckIn {
   energy: number;
   notes?: string;
   goals?: string;
+  sleepHours?: number;
+  sleepQuality?: number;
+  waterGlasses?: number;
+  activityMinutes?: number;
+  stressLevel?: number;
   createdAt?: string;
 }
 
@@ -13,6 +18,11 @@ export interface CreateCheckInDto {
   energy: number;
   notes?: string;
   goals?: string;
+  sleepHours?: number;
+  sleepQuality?: number;
+  waterGlasses?: number;
+  activityMinutes?: number;
+  stressLevel?: number;
 }
 
 export interface CheckInStats {
@@ -21,4 +31,14 @@ export interface CheckInStats {
   averageMood: number;
   averageEnergy: number;
   currentStreak: number;
+}
+
+export interface HealthSummary {
+  week: string;
+  avgSleepHours: number | null;
+  avgSleepQuality: number | null;
+  avgWaterGlasses: number | null;
+  avgActivityMinutes: number | null;
+  avgStressLevel: number | null;
+  count: number;
 }
