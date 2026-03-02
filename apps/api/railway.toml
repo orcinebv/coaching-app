@@ -1,0 +1,10 @@
+[build]
+dockerfilePath = "apps/api/Dockerfile"
+dockerBuildTarget = "production"
+
+[deploy]
+startCommand = "sh -c 'node node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && node main.js'"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

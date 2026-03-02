@@ -9,15 +9,19 @@ COPY . .
 
 RUN npx nx build web --configuration=production
 
+# ---- Production (nginx + envsubst voor BACKEND_URL) ----
 FROM nginx:alpine AS production
 
 COPY --from=builder /app/dist/apps/web/browser /usr/share/nginx/html
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Gebruik nginx templates-map zodat BACKEND_URL automatisch wordt vervangen via envsubst
+COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 
+# ---- Development ----
 FROM node:20-alpine AS development
 
 WORKDIR /app
