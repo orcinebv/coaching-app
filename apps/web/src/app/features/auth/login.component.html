@@ -1,0 +1,112 @@
+    <div class="auth-layout">
+      <!-- Left panel: brand / visual -->
+      <div class="auth-panel">
+        <div class="panel-content">
+          <div class="panel-brand">
+            <div class="panel-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <span class="panel-brand-name">Coaching App</span>
+          </div>
+
+          <div class="panel-headline">
+            <h2>Groei begint<br>met bewustzijn.</h2>
+            <p>Jouw persoonlijke coach, altijd beschikbaar.</p>
+          </div>
+
+          <div class="panel-features">
+            <div class="feature-item">
+              <div class="feature-dot"></div>
+              <span>Dagelijkse check-ins & stemming</span>
+            </div>
+            <div class="feature-item">
+              <div class="feature-dot"></div>
+              <span>AI-gestuurde inzichten</span>
+            </div>
+            <div class="feature-item">
+              <div class="feature-dot"></div>
+              <span>Persoonlijke doelen & voortgang</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-orb panel-orb--1"></div>
+        <div class="panel-orb panel-orb--2"></div>
+      </div>
+
+      <!-- Right panel: form -->
+      <div class="auth-form-side">
+        <div class="auth-form-container">
+          <div class="auth-header">
+            <h1>Welkom terug</h1>
+            <p>Log in op je coaching account</p>
+          </div>
+
+          @if (authStore.error()) {
+            <div class="alert alert-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {{ authStore.error() }}
+            </div>
+          }
+
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+              <label for="email">E-mailadres</label>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="jij@voorbeeld.nl"
+                [class.input-error]="isFieldInvalid('email')"
+              />
+              @if (isFieldInvalid('email')) {
+                <span class="error-message">
+                  @if (loginForm.get('email')?.errors?.['required']) {
+                    E-mail is verplicht
+                  } @else {
+                    Voer een geldig e-mailadres in
+                  }
+                </span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="password">Wachtwoord</label>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                placeholder="Jouw wachtwoord"
+                [class.input-error]="isFieldInvalid('password')"
+              />
+              @if (isFieldInvalid('password')) {
+                <span class="error-message">Wachtwoord is verplicht</span>
+              }
+            </div>
+
+            <button
+              type="submit"
+              class="btn-submit"
+              [disabled]="authStore.loading()"
+            >
+              @if (authStore.loading()) {
+                <span class="spinner"></span>
+                Inloggen...
+              } @else {
+                Inloggen
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              }
+            </button>
+          </form>
+
+          <p class="auth-footer">
+            Nog geen account?
+            <a routerLink="/register">Aanmelden</a>
+          </p>
+        </div>
+      </div>
+    </div>

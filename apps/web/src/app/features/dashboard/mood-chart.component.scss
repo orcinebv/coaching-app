@@ -1,0 +1,20 @@
+    .chart-container {
+      position: relative;
+      width: 100%;
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-height: 300px;
+    }
+
+    .chart-empty {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 0.875rem;
+      padding: 2rem;
+    }

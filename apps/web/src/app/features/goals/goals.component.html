@@ -1,0 +1,170 @@
+    <div class="goals-page">
+      <div class="page-header">
+        <h1>Mijn Doelen</h1>
+        <p>Stel SMART-doelen en volg je voortgang</p>
+      </div>
+
+      @if (!showForm) {
+        <div class="goals-header">
+          <div class="stats-row">
+            <div class="stat-chip">
+              <span class="stat-num">{{ goalsStore.activeGoals().length }}</span>
+              <span class="stat-lbl">Actief</span>
+            </div>
+            <div class="stat-chip stat-chip--success">
+              <span class="stat-num">{{ goalsStore.completedGoals().length }}</span>
+              <span class="stat-lbl">Voltooid</span>
+            </div>
+            <div class="stat-chip stat-chip--info">
+              <span class="stat-num">{{ goalsStore.avgProgress() }}%</span>
+              <span class="stat-lbl">Gem. voortgang</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" (click)="showForm = true">+ Nieuw doel</button>
+        </div>
+      }
+
+      @if (showForm) {
+        <div class="card form-card">
+          <div class="card-header">
+            <h2>Nieuw SMART-doel</h2>
+            <button class="btn-close" (click)="cancelForm()">✕</button>
+          </div>
+
+          @if (successMessage) {
+            <div class="alert alert-success">{{ successMessage }}</div>
+          }
+          @if (errorMessage) {
+            <div class="alert alert-error">{{ errorMessage }}</div>
+          }
+
+          <form [formGroup]="goalForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+              <label>Titel *</label>
+              <input type="text" formControlName="title" placeholder="Naam van je doel" />
+            </div>
+
+            <div class="form-group">
+              <label>Beschrijving</label>
+              <textarea formControlName="description" placeholder="Optionele beschrijving" rows="2"></textarea>
+            </div>
+
+            <div class="smart-grid">
+              <div class="smart-item">
+                <div class="smart-label">
+                  <span class="smart-letter">S</span>
+                  <span>Specifiek</span>
+                </div>
+                <textarea formControlName="specific" placeholder="Wat wil je precies bereiken?" rows="2"></textarea>
+              </div>
+              <div class="smart-item">
+                <div class="smart-label">
+                  <span class="smart-letter smart-letter--m">M</span>
+                  <span>Meetbaar</span>
+                </div>
+                <textarea formControlName="measurable" placeholder="Hoe meet je de voortgang?" rows="2"></textarea>
+              </div>
+              <div class="smart-item">
+                <div class="smart-label">
+                  <span class="smart-letter smart-letter--a">A</span>
+                  <span>Haalbaar</span>
+                </div>
+                <textarea formControlName="achievable" placeholder="Is het realistisch haalbaar?" rows="2"></textarea>
+              </div>
+              <div class="smart-item">
+                <div class="smart-label">
+                  <span class="smart-letter smart-letter--r">R</span>
+                  <span>Relevant</span>
+                </div>
+                <textarea formControlName="relevant" placeholder="Waarom is dit doel belangrijk?" rows="2"></textarea>
+              </div>
+              <div class="smart-item">
+                <div class="smart-label">
+                  <span class="smart-letter smart-letter--t">T</span>
+                  <span>Tijdgebonden</span>
+                </div>
+                <input type="date" formControlName="timeBound" />
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="cancelForm()">Annuleren</button>
+              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || goalForm.invalid">
+                @if (isSubmitting) {
+                  <span class="spinner"></span>
+                }
+                Opslaan
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      <div class="goals-list">
+        @for (goal of goalsStore.goals(); track goal.id) {
+          <div class="card goal-card" [class.goal-card--completed]="goal.status === 'completed'">
+            <div class="goal-header">
+              <div class="goal-title-row">
+                <h3>{{ goal.title }}</h3>
+                <span class="status-badge" [class]="'status-badge--' + goal.status">
+                  {{ getStatusLabel(goal.status) }}
+                </span>
+              </div>
+              @if (goal.description) {
+                <p class="goal-desc">{{ goal.description }}</p>
+              }
+            </div>
+
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="progress-label">Voortgang</span>
+                <span class="progress-value">{{ goal.progress }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="goal.progress"></div>
+              </div>
+            </div>
+
+            <div class="smart-summary">
+              <div class="smart-row"><strong>S:</strong> {{ goal.specific }}</div>
+              <div class="smart-row"><strong>M:</strong> {{ goal.measurable }}</div>
+              <div class="smart-row"><strong>T:</strong> {{ goal.timeBound | date:'dd MMM yyyy' }}</div>
+            </div>
+
+            <div class="goal-actions">
+              @if (goal.status === 'active') {
+                <div class="progress-update">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    [value]="goal.progress"
+                    (change)="updateProgress(goal.id, $event)"
+                    class="range-slider"
+                  />
+                </div>
+                <button class="btn btn-secondary btn-sm" (click)="completeGoal(goal.id)">Voltooid</button>
+                <button class="btn btn-sm btn-danger-outline" (click)="abandonGoal(goal.id)">Opgeven</button>
+              }
+              <button class="btn btn-sm btn-ghost" (click)="deleteGoal(goal.id)">Verwijder</button>
+            </div>
+          </div>
+        } @empty {
+          @if (!goalsStore.loading()) {
+            <div class="empty-state card">
+              <div class="empty-icon">🎯</div>
+              <h3>Nog geen doelen</h3>
+              <p>Stel je eerste SMART-doel in om je groei bij te houden.</p>
+              <button class="btn btn-primary" (click)="showForm = true">Eerste doel instellen</button>
+            </div>
+          }
+        }
+      </div>
+
+      @if (goalsStore.loading()) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+          <span>Laden...</span>
+        </div>
+      }
+    </div>

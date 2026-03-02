@@ -1,0 +1,35 @@
+    .admin-container { padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .admin-header { margin-bottom: 24px; }
+    .admin-header h1 { font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0; }
+    .subtitle { color: #666; margin: 4px 0 0; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb; }
+    .tabs button { padding: 10px 20px; border: none; background: none; cursor: pointer; color: #666; font-size: 14px; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tabs button.active { color: #6c63ff; border-bottom-color: #6c63ff; font-weight: 600; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+    .stat-card.highlight { background: linear-gradient(135deg, #6c63ff, #9b59b6); color: white; }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+    .stat-card.highlight .stat-label { color: rgba(255,255,255,0.8); }
+    .roles-breakdown h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .role-list { display: flex; gap: 12px; }
+    .role-item { display: flex; align-items: center; gap: 8px; }
+    .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .role-badge[data-role="ADMIN"] { background: #fee2e2; color: #dc2626; }
+    .role-badge[data-role="COACH"] { background: #dbeafe; color: #2563eb; }
+    .role-badge[data-role="USER"] { background: #f3f4f6; color: #374151; }
+    .role-count { font-size: 14px; font-weight: 600; }
+    .table-container { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .data-table th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
+    .data-table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f3f4f6; }
+    .role-select { padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; }
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .status-badge.active { background: #d1fae5; color: #065f46; }
+    .status-badge.inactive { background: #fee2e2; color: #991b1b; }
+    .btn-danger-sm { padding: 4px 12px; border-radius: 6px; border: none; background: #fee2e2; color: #dc2626; cursor: pointer; font-size: 12px; }
+    .btn-success-sm { padding: 4px 12px; border-radius: 6px; border: none; background: #d1fae5; color: #065f46; cursor: pointer; font-size: 12px; }
+    .method-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .method-badge[data-method="POST"] { background: #d1fae5; color: #065f46; }
+    .method-badge[data-method="PATCH"], .method-badge[data-method="PUT"] { background: #fef3c7; color: #92400e; }
+    .method-badge[data-method="DELETE"] { background: #fee2e2; color: #991b1b; }

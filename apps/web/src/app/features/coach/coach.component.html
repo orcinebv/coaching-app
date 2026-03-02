@@ -1,0 +1,120 @@
+    <div class="coach-container">
+      <div class="coach-header">
+        <h1>Coach Dashboard</h1>
+        <p class="subtitle">Overzicht van jouw coachees</p>
+      </div>
+
+      <!-- Crisis Alerts Banner -->
+      <div *ngIf="crisisAlerts().length > 0" class="crisis-banner">
+        <span class="crisis-icon">⚠️</span>
+        <strong>Let op:</strong> {{ crisisAlerts().length }} coachee(s) tonen crisissignalen.
+        <span *ngFor="let alert of crisisAlerts(); let last = last">
+          {{ alert.user.name }}<span *ngIf="!last">, </span>
+        </span>
+      </div>
+
+      <div class="coach-layout">
+        <!-- Coachee List -->
+        <div class="coachee-list">
+          <h2>Coachees ({{ coachees().length }})</h2>
+          <div
+            *ngFor="let c of coachees()"
+            class="coachee-card"
+            [class.selected]="selectedCoachee()?.id === c.id"
+            [class.crisis]="c.hasCrisisAlert"
+            (click)="selectCoachee(c)"
+          >
+            <div class="coachee-avatar">{{ c.name.charAt(0).toUpperCase() }}</div>
+            <div class="coachee-info">
+              <div class="coachee-name">
+                {{ c.name }}
+                <span *ngIf="c.hasCrisisAlert" class="crisis-badge">!</span>
+              </div>
+              <div class="coachee-email">{{ c.email }}</div>
+              <div *ngIf="c.lastCheckIn" class="coachee-mood">
+                Stemming: {{ c.lastCheckIn.mood }}/10
+              </div>
+              <div *ngIf="!c.lastCheckIn" class="coachee-mood no-data">Geen check-in</div>
+            </div>
+          </div>
+          <div *ngIf="coachees().length === 0" class="empty-state">
+            Geen coachees toegewezen
+          </div>
+        </div>
+
+        <!-- Coachee Detail -->
+        <div class="coachee-detail" *ngIf="selectedOverview()">
+          <div class="detail-header">
+            <div class="detail-avatar">{{ selectedOverview()!.user.name.charAt(0).toUpperCase() }}</div>
+            <div>
+              <h2>{{ selectedOverview()!.user.name }}</h2>
+              <p>{{ selectedOverview()!.user.email }}</p>
+            </div>
+          </div>
+
+          <!-- Alert -->
+          <div *ngIf="selectedOverview()!.stats.hasCrisisAlert" class="detail-crisis-alert">
+            ⚠️ Crisissignaal gedetecteerd – volg deze coachee actief op
+          </div>
+
+          <!-- Stats -->
+          <div class="detail-stats">
+            <div class="detail-stat">
+              <div class="detail-stat-value">{{ selectedOverview()!.stats.avgMood ?? '-' }}</div>
+              <div class="detail-stat-label">Gem. stemming</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-stat-value">{{ selectedOverview()!.stats.checkInCount }}</div>
+              <div class="detail-stat-label">Check-ins (14d)</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-stat-value">{{ selectedOverview()!.stats.activeGoals }}</div>
+              <div class="detail-stat-label">Actieve doelen</div>
+            </div>
+          </div>
+
+          <!-- Mood chart (simplified) -->
+          <div class="section">
+            <h3>Recente stemming</h3>
+            <div class="mood-chart">
+              <div
+                *ngFor="let ci of selectedOverview()!.recentCheckIns.slice(0, 10)"
+                class="mood-bar"
+                [style.height.px]="ci.mood * 8"
+                [title]="'Stemming: ' + ci.mood + ', Energie: ' + ci.energy"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Goals -->
+          <div class="section">
+            <h3>Actieve doelen</h3>
+            <div *ngFor="let goal of selectedOverview()!.goals" class="goal-item">
+              <div class="goal-title">{{ goal.title }}</div>
+              <div class="goal-progress-bar">
+                <div class="goal-progress-fill" [style.width.%]="goal.progress"></div>
+              </div>
+              <span class="goal-pct">{{ goal.progress }}%</span>
+            </div>
+            <div *ngIf="selectedOverview()!.goals.length === 0" class="empty-state">Geen actieve doelen</div>
+          </div>
+
+          <!-- Notes -->
+          <div class="section">
+            <h3>Coaching notities</h3>
+            <div class="note-input">
+              <textarea [(ngModel)]="newNote" placeholder="Voeg een notitie toe..." rows="3"></textarea>
+              <button (click)="addNote()" class="btn-primary">Notitie opslaan</button>
+            </div>
+            <div *ngFor="let note of notes()" class="note-item">
+              <p>{{ note.content }}</p>
+              <small>{{ note.createdAt | date:'dd-MM-yyyy HH:mm' }}</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="coachee-detail empty-detail" *ngIf="!selectedOverview()">
+          <p>Selecteer een coachee om details te bekijken</p>
+        </div>
+      </div>
+    </div>

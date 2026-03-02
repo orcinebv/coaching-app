@@ -1,0 +1,184 @@
+    <div class="dashboard">
+      <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p>Overzicht van je coaching voortgang</p>
+      </div>
+
+      @if (isInitialLoad()) {
+        <div class="stats-grid">
+          <div class="skeleton-stat card"></div>
+          <div class="skeleton-stat card"></div>
+          <div class="skeleton-stat card"></div>
+          <div class="skeleton-stat card"></div>
+        </div>
+      } @else {
+        <div class="stats-grid">
+          <app-stats-card
+            title="Gesprekken"
+            [value]="checkInStore.stats()?.totalConversations ?? 0"
+            icon="chat"
+            trend="neutral"
+          />
+          <app-stats-card
+            title="Check-ins"
+            [value]="checkInStore.totalCheckIns()"
+            icon="checkin"
+            trend="up"
+          />
+          <app-stats-card
+            title="Gem. Stemming"
+            [value]="checkInStore.averageMood()"
+            icon="mood"
+            trend="up"
+          />
+          <app-stats-card
+            title="Streak"
+            [value]="checkInStore.currentStreak()"
+            icon="streak"
+            trend="up"
+          />
+        </div>
+      }
+
+      <!-- Daily Prompt Widget -->
+      @if (promptsStore.dailyPrompt(); as prompt) {
+        <div class="prompt-widget card" [class.skipped]="prompt.skipped">
+          <div class="prompt-header">
+            <div class="prompt-label">
+              <span class="prompt-icon">💭</span>
+              Dagelijkse coaching vraag
+              <span class="prompt-type-badge">{{ getPromptTypeLabel(prompt.type) }}</span>
+            </div>
+            @if (!prompt.skipped) {
+              <button class="btn-icon" title="Overslaan" (click)="skipPrompt(prompt.id)">✕</button>
+            }
+          </div>
+          <p class="prompt-text">{{ prompt.prompt }}</p>
+          @if (!prompt.skipped && !prompt.rating) {
+            <div class="prompt-actions">
+              <a [routerLink]="['/journal']" class="btn btn-primary btn-sm">Antwoord schrijven</a>
+              <div class="prompt-rating">
+                <span class="rating-label">Goede vraag?</span>
+                @for (star of [1,2,3,4,5]; track star) {
+                  <button class="star-btn" (click)="ratePrompt(prompt.id, star)">★</button>
+                }
+              </div>
+            </div>
+          }
+          @if (prompt.rating) {
+            <div class="prompt-rated">Bedankt voor je feedback! ⭐ {{ prompt.rating }}/5</div>
+          }
+        </div>
+      }
+
+      <div class="dashboard-grid">
+        <div class="main-col">
+          <div class="chart-section card">
+            <h2>Stemming & Energie Trends</h2>
+            <app-mood-chart [chartData]="checkInStore.chartData()" />
+          </div>
+
+          <!-- Insights preview -->
+          @if (insightsStore.insights().length > 0) {
+            <div class="insights-preview card">
+              <div class="section-header">
+                <h2>
+                  Recente inzichten
+                  @if (insightsStore.unreadCount() > 0) {
+                    <span class="badge">{{ insightsStore.unreadCount() }}</span>
+                  }
+                </h2>
+                <a routerLink="/insights" class="link">Alle inzichten</a>
+              </div>
+              <div class="insights-list">
+                @for (insight of insightsStore.insights().slice(0, 3); track insight.id) {
+                  <div class="insight-item" [class.unread]="!insight.isRead" (click)="insightsStore.markRead(insight.id)">
+                    <span class="insight-icon">{{ getInsightIcon(insight.type) }}</span>
+                    <div>
+                      <div class="insight-title">{{ insight.title }}</div>
+                      <div class="insight-content">{{ insight.content }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="side-col">
+          <!-- Recommendations Widget -->
+          <div class="recommendations-card card">
+            <div class="section-header">
+              <h2>Aanbevelingen</h2>
+              <a routerLink="/exercises" class="link">Alle oefeningen</a>
+            </div>
+
+            @if (recommendationsStore.loading()) {
+              <div class="reco-skeletons">
+                <div class="skeleton-text" style="width: 80%; margin-bottom: 0.5rem;"></div>
+                <div class="skeleton-text" style="width: 60%; margin-bottom: 0.5rem;"></div>
+                <div class="skeleton-text" style="width: 70%;"></div>
+              </div>
+            } @else if (recommendationsStore.recommendations().length === 0) {
+              <div class="empty-sm">
+                <p>Doe een check-in voor gepersonaliseerde aanbevelingen</p>
+                <a routerLink="/checkin" class="btn btn-primary btn-sm">Check-in doen</a>
+              </div>
+            } @else {
+              <div class="reco-list">
+                @for (reco of recommendationsStore.recommendations().slice(0, 3); track reco.id) {
+                  <div class="reco-item">
+                    <div class="reco-info">
+                      <div class="reco-title">{{ reco.title }}</div>
+                      <div class="reco-reason">{{ reco.reason }}</div>
+                      @if (reco.exercise) {
+                        <div class="reco-meta">{{ reco.exercise.duration }} min · {{ reco.exercise.difficulty }}</div>
+                      }
+                    </div>
+                    <div class="reco-actions">
+                      <button class="btn-icon" title="Nuttig" (click)="recoFeedback(reco.id, true)">👍</button>
+                      <button class="btn-icon" title="Niet nuttig" (click)="recoFeedback(reco.id, false)">👎</button>
+                      <button class="btn-icon" title="Verwijderen" (click)="dismissReco(reco.id)">✕</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Recent check-ins -->
+          <div class="checkins-section card">
+            <div class="section-header">
+              <h2>Recente Check-ins</h2>
+              <a routerLink="/checkin" class="btn btn-primary btn-sm">Nieuw</a>
+            </div>
+
+            <div class="checkin-list">
+              @for (checkin of checkInStore.recentCheckIns(); track checkin.id) {
+                <div class="checkin-item">
+                  <div class="checkin-date">{{ checkin.createdAt | date:'mediumDate' }}</div>
+                  <div class="checkin-metrics">
+                    <span class="metric mood">
+                      <span class="metric-label">Stemming</span>
+                      <span class="metric-value">{{ checkin.mood }}/10</span>
+                    </span>
+                    <span class="metric energy">
+                      <span class="metric-label">Energie</span>
+                      <span class="metric-value">{{ checkin.energy }}/10</span>
+                    </span>
+                  </div>
+                  @if (checkin.notes) {
+                    <div class="checkin-notes">{{ checkin.notes }}</div>
+                  }
+                </div>
+              } @empty {
+                <div class="empty-state">
+                  <p>Nog geen check-ins.</p>
+                  <a routerLink="/checkin" class="btn btn-primary btn-sm">Eerste check-in doen</a>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

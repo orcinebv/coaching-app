@@ -1,0 +1,108 @@
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Create Account</h1>
+          <p>Start your coaching journey today</p>
+        </div>
+
+        @if (authStore.error()) {
+          <div class="alert alert-error">
+            {{ authStore.error() }}
+          </div>
+        }
+
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              placeholder="John Doe"
+              [class.input-error]="isFieldInvalid('name')"
+            />
+            @if (isFieldInvalid('name')) {
+              <span class="error-message">Name is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="you@example.com"
+              [class.input-error]="isFieldInvalid('email')"
+            />
+            @if (isFieldInvalid('email')) {
+              <span class="error-message">
+                @if (registerForm.get('email')?.errors?.['required']) {
+                  Email is required
+                } @else {
+                  Please enter a valid email
+                }
+              </span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="Min. 6 characters"
+              [class.input-error]="isFieldInvalid('password')"
+            />
+            @if (isFieldInvalid('password')) {
+              <span class="error-message">
+                @if (registerForm.get('password')?.errors?.['required']) {
+                  Password is required
+                } @else {
+                  Password must be at least 6 characters
+                }
+              </span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              formControlName="confirmPassword"
+              placeholder="Re-enter your password"
+              [class.input-error]="isFieldInvalid('confirmPassword')"
+            />
+            @if (isFieldInvalid('confirmPassword')) {
+              <span class="error-message">
+                @if (registerForm.get('confirmPassword')?.errors?.['required']) {
+                  Please confirm your password
+                } @else {
+                  Passwords do not match
+                }
+              </span>
+            }
+          </div>
+
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="authStore.loading()"
+          >
+            @if (authStore.loading()) {
+              <span class="spinner"></span>
+              Account aanmaken...
+            } @else {
+              Account aanmaken
+            }
+          </button>
+        </form>
+
+        <p class="auth-footer">
+          Already have an account?
+          <a routerLink="/login">Sign in</a>
+        </p>
+      </div>
+    </div>

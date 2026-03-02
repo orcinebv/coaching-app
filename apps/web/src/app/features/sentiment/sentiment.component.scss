@@ -1,0 +1,205 @@
+    .page {
+      padding: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 1.5rem;
+      h1 { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+      p { color: var(--text-light); font-size: 0.875rem; margin-top: 0.25rem; }
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-card {
+      text-align: center;
+      padding: 1.25rem;
+
+      &.crisis { border-color: #ef4444; background: #fef2f2; }
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-lighter);
+      margin-bottom: 0.5rem;
+    }
+
+    .card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+
+      &.positive { color: #16a34a; }
+      &.negative { color: #dc2626; }
+
+      &.trend {
+        font-size: 1.125rem;
+        &.up { color: #16a34a; }
+        &.down { color: #dc2626; }
+      }
+
+      &.emotion { font-size: 1.25rem; }
+    }
+
+    .card-sub {
+      font-size: 0.75rem;
+      color: var(--text-lighter);
+    }
+
+    .crisis-alert {
+      grid-column: 1 / -1;
+      background: #fef2f2;
+      border: 1px solid #ef4444;
+      padding: 1rem;
+
+      .crisis-title {
+        font-weight: 600;
+        color: #dc2626;
+        margin-bottom: 0.5rem;
+      }
+
+      p { font-size: 0.875rem; color: var(--text); line-height: 1.5; }
+    }
+
+    .section {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+
+      h2 { font-size: 1.125rem; font-weight: 600; }
+    }
+
+    .period-filter {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 120px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .chart-bar-wrapper {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .chart-bar {
+      width: 100%;
+      border-radius: 2px;
+      min-height: 2px;
+      transition: opacity 0.2s;
+
+      &.positive { background: #16a34a; }
+      &.negative { background: #dc2626; }
+      &.crisis { background: #7c3aed; }
+
+      &:hover { opacity: 0.8; }
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      color: var(--text-light);
+
+      &::before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+      }
+
+      &.positive::before { background: #16a34a; }
+      &.negative::before { background: #dc2626; }
+      &.crisis::before { background: #7c3aed; }
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+    }
+
+    .history-date {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      min-width: 100px;
+    }
+
+    .history-emotions {
+      flex: 1;
+      display: flex;
+      gap: 0.375rem;
+      flex-wrap: wrap;
+    }
+
+    .emotion-tag {
+      font-size: 0.6875rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 100px;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .history-overall {
+      font-weight: 600;
+      font-size: 0.875rem;
+      min-width: 50px;
+      text-align: right;
+
+      &.positive { color: #16a34a; }
+      &.negative { color: #dc2626; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+      p { margin-bottom: 1rem; font-size: 0.875rem; }
+    }

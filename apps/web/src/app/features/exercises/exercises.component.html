@@ -1,0 +1,148 @@
+    <div class="exercises-page">
+      <div class="page-header">
+        <h1>Oefeningen</h1>
+        <p>Zelfhulp oefeningen voor mentale gezondheid en welzijn</p>
+      </div>
+
+      <div class="stats-bar card">
+        <div class="stat-item">
+          <span class="stat-num">{{ exercisesStore.stats()?.total ?? 0 }}</span>
+          <span class="stat-lbl">Voltooid</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num">{{ exercisesStore.stats()?.totalMinutes ?? 0 }}</span>
+          <span class="stat-lbl">Minuten</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num">{{ exercisesStore.stats()?.avgRating ?? 0 }}</span>
+          <span class="stat-lbl">Gem. beoordeling</span>
+        </div>
+      </div>
+
+      <div class="category-filter">
+        <button
+          class="filter-btn"
+          [class.filter-btn--active]="!exercisesStore.selectedCategory()"
+          (click)="exercisesStore.setCategory(null)"
+        >
+          Alle
+        </button>
+        @for (cat of exercisesStore.categories(); track cat) {
+          <button
+            class="filter-btn"
+            [class.filter-btn--active]="exercisesStore.selectedCategory() === cat"
+            (click)="exercisesStore.setCategory(cat)"
+          >
+            {{ getCategoryIcon(cat) }} {{ getCategoryLabel(cat) }}
+          </button>
+        }
+      </div>
+
+      @if (exercisesStore.loading()) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+        </div>
+      }
+
+      <div class="exercises-grid">
+        @for (exercise of exercisesStore.filteredExercises(); track exercise.id) {
+          <div class="card exercise-card" [class.exercise-card--active]="selectedExercise?.id === exercise.id">
+            <div class="exercise-header">
+              <div class="exercise-meta">
+                <span class="category-tag" [attr.data-cat]="exercise.category">
+                  {{ getCategoryIcon(exercise.category) }} {{ getCategoryLabel(exercise.category) }}
+                </span>
+                <span class="difficulty-badge" [class]="'difficulty--' + exercise.difficulty">
+                  {{ getDifficultyLabel(exercise.difficulty) }}
+                </span>
+              </div>
+              <div class="duration-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {{ exercise.duration }} min
+              </div>
+            </div>
+
+            <h3 class="exercise-title">{{ exercise.title }}</h3>
+            <p class="exercise-desc">{{ exercise.description }}</p>
+
+            <div class="benefits-list">
+              @for (benefit of exercise.benefits.slice(0, 2); track benefit) {
+                <span class="benefit-item">✓ {{ benefit }}</span>
+              }
+            </div>
+
+            @if (selectedExercise?.id === exercise.id) {
+              <div class="exercise-detail">
+                <h4>Stappen:</h4>
+                <ol class="steps-list">
+                  @for (step of exercise.steps; track $index) {
+                    <li>{{ step }}</li>
+                  }
+                </ol>
+
+                @if (showCompleteForm) {
+                  <div class="complete-form">
+                    <div class="rating-section">
+                      <label>Beoordeling (optioneel)</label>
+                      <div class="rating-stars">
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <button
+                            type="button"
+                            class="star-btn"
+                            [class.star-btn--active]="selectedRating >= star"
+                            (click)="selectedRating = star"
+                          >★</button>
+                        }
+                      </div>
+                    </div>
+                    <textarea
+                      [(ngModel)]="completionNotes"
+                      placeholder="Notities over je ervaring (optioneel)"
+                      rows="2"
+                      class="notes-input"
+                    ></textarea>
+                    <div class="complete-actions">
+                      <button class="btn btn-secondary btn-sm" (click)="cancelComplete()">Annuleer</button>
+                      <button class="btn btn-primary btn-sm" (click)="submitComplete(exercise.id)" [disabled]="isCompleting">
+                        @if (isCompleting) { <span class="spinner spinner-sm"></span> }
+                        Voltooien
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                @if (completedId === exercise.id) {
+                  <div class="alert alert-success">Oefening voltooid! Goed gedaan! 🎉</div>
+                }
+              </div>
+            }
+
+            <div class="exercise-actions">
+              @if (selectedExercise?.id !== exercise.id) {
+                <button class="btn btn-primary btn-sm" (click)="selectExercise(exercise)">Start oefening</button>
+              } @else {
+                @if (!showCompleteForm && completedId !== exercise.id) {
+                  <button class="btn btn-secondary btn-sm" (click)="selectedExercise = null">Sluiten</button>
+                  <button class="btn btn-primary btn-sm" (click)="startComplete()">Voltooien</button>
+                } @else if (completedId === exercise.id) {
+                  <button class="btn btn-secondary btn-sm" (click)="resetComplete()">Sluiten</button>
+                }
+              }
+            </div>
+          </div>
+        } @empty {
+          @if (!exercisesStore.loading()) {
+            <div class="card empty-state-base">
+              <span class="empty-state-icon">🧘</span>
+              <div class="empty-state-title">Geen oefeningen beschikbaar</div>
+              <div class="empty-state-desc">Er zijn momenteel geen oefeningen beschikbaar. Kom later terug.</div>
+            </div>
+          }
+        }
+      </div>
+    </div>

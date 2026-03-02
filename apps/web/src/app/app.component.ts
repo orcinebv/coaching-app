@@ -8,20 +8,8 @@ import { AuthStore } from './core/stores/auth.store';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, NavbarComponent, NotificationBannerComponent],
-  template: `
-    @if (authStore.isAuthenticated()) {
-      <app-navbar />
-      <app-notification-banner />
-    }
-    <router-outlet />
-  `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-  `],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
   readonly authStore = inject(AuthStore);

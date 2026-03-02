@@ -1,0 +1,14 @@
+    <div class="chart-container">
+      @if (chartData.labels.length > 0) {
+        <canvas baseChart
+          [datasets]="lineChartData.datasets"
+          [labels]="lineChartData.labels"
+          [options]="lineChartOptions"
+          type="line"
+        ></canvas>
+      } @else {
+        <div class="chart-empty">
+          <p>No data to display yet. Complete some check-ins to see your trends.</p>
+        </div>
+      }
+    </div>

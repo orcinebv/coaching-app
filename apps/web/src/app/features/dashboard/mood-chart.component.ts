@@ -7,44 +7,8 @@ import { ChartConfiguration } from 'chart.js';
   selector: 'app-mood-chart',
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
-  template: `
-    <div class="chart-container">
-      @if (chartData.labels.length > 0) {
-        <canvas baseChart
-          [datasets]="lineChartData.datasets"
-          [labels]="lineChartData.labels"
-          [options]="lineChartOptions"
-          type="line"
-        ></canvas>
-      } @else {
-        <div class="chart-empty">
-          <p>No data to display yet. Complete some check-ins to see your trends.</p>
-        </div>
-      }
-    </div>
-  `,
-  styles: [`
-    .chart-container {
-      position: relative;
-      width: 100%;
-      min-height: 250px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    canvas {
-      width: 100% !important;
-      max-height: 300px;
-    }
-
-    .chart-empty {
-      text-align: center;
-      color: var(--text-light);
-      font-size: 0.875rem;
-      padding: 2rem;
-    }
-  `],
+  templateUrl: './mood-chart.component.html',
+  styleUrls: ['./mood-chart.component.scss'],
 })
 export class MoodChartComponent implements OnChanges {
   @Input() chartData: { labels: string[]; mood: number[]; energy: number[] } = {

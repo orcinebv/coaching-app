@@ -1,0 +1,151 @@
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1>Admin Panel</h1>
+        <p class="subtitle">Beheer gebruikers, bekijk statistieken en audit logs</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Statistieken</button>
+        <button [class.active]="activeTab() === 'users'" (click)="activeTab.set('users')">Gebruikers</button>
+        <button [class.active]="activeTab() === 'costs'" (click)="activeTab.set('costs')">AI Kosten</button>
+        <button [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Audit Log</button>
+      </div>
+
+      <!-- Stats Tab -->
+      <div *ngIf="activeTab() === 'stats'" class="tab-content">
+        <div *ngIf="stats()" class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()!.totalUsers }}</div>
+            <div class="stat-label">Totaal gebruikers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()!.activeUsers }}</div>
+            <div class="stat-label">Actieve gebruikers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()!.totalConversations }}</div>
+            <div class="stat-label">Gesprekken</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()!.totalCheckIns }}</div>
+            <div class="stat-label">Check-ins</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-value">€{{ stats()!.aiUsage.totalCostEur.toFixed(2) }}</div>
+            <div class="stat-label">Totaal AI kosten</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()!.aiUsage.totalCalls }}</div>
+            <div class="stat-label">AI aanroepen</div>
+          </div>
+        </div>
+
+        <div *ngIf="stats()" class="roles-breakdown">
+          <h3>Rolverdeling</h3>
+          <div class="role-list">
+            <div *ngFor="let r of stats()!.roleBreakdown" class="role-item">
+              <span class="role-badge" [attr.data-role]="r.role">{{ r.role }}</span>
+              <span class="role-count">{{ r.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Tab -->
+      <div *ngIf="activeTab() === 'users'" class="tab-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Naam</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Status</th>
+                <th>Check-ins</th>
+                <th>Gesprekken</th>
+                <th>Lid sinds</th>
+                <th>Acties</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of users()">
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <select [(ngModel)]="user.role" (change)="updateRole(user)" class="role-select">
+                    <option value="USER">USER</option>
+                    <option value="COACH">COACH</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </td>
+                <td>
+                  <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+                    {{ user.isActive ? 'Actief' : 'Inactief' }}
+                  </span>
+                </td>
+                <td>{{ user._count.checkIns }}</td>
+                <td>{{ user._count.conversations }}</td>
+                <td>{{ user.createdAt | date:'dd-MM-yyyy' }}</td>
+                <td>
+                  <button *ngIf="user.isActive" (click)="deactivateUser(user)" class="btn-danger-sm">Deactiveer</button>
+                  <button *ngIf="!user.isActive" (click)="activateUser(user)" class="btn-success-sm">Activeer</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI Costs Tab -->
+      <div *ngIf="activeTab() === 'costs'" class="tab-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Gebruiker</th>
+                <th>Email</th>
+                <th>Tokens gebruikt</th>
+                <th>Kosten (EUR)</th>
+                <th>Aantal calls</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cost of aiCosts()">
+                <td>{{ cost.user.name }}</td>
+                <td>{{ cost.user.email }}</td>
+                <td>{{ cost.tokensUsed | number }}</td>
+                <td>€{{ cost.costEur.toFixed(4) }}</td>
+                <td>{{ cost.calls }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Audit Log Tab -->
+      <div *ngIf="activeTab() === 'audit'" class="tab-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Gebruiker</th>
+                <th>Actie</th>
+                <th>Resource</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of auditLogs()">
+                <td>{{ log.createdAt | date:'dd-MM-yyyy HH:mm' }}</td>
+                <td>{{ log.user ? log.user.name : 'Onbekend' }}</td>
+                <td><span class="method-badge" [attr.data-method]="log.action">{{ log.action }}</span></td>
+                <td>{{ log.resource }}{{ log.resourceId ? '/' + log.resourceId.substring(0, 8) + '...' : '' }}</td>
+                <td>{{ log.ipAddress || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>

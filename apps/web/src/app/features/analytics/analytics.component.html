@@ -1,0 +1,145 @@
+    <div class="analytics-page">
+      <div class="page-header">
+        <h1>Analytics</h1>
+        <p>Inzicht in je patronen en voortgang</p>
+      </div>
+
+      @if (loading) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+          <span>Analyseren...</span>
+        </div>
+      }
+
+      @if (summary) {
+        <div class="summary-grid">
+          <div class="card summary-card">
+            <div class="summary-icon">📊</div>
+            <div class="summary-info">
+              <div class="summary-num">{{ summary.checkIns.total }}</div>
+              <div class="summary-label">Check-ins</div>
+            </div>
+            <div class="summary-sub">
+              Gem. stemming: <strong>{{ summary.checkIns.avgMood }}/10</strong>
+            </div>
+          </div>
+          <div class="card summary-card">
+            <div class="summary-icon">🎯</div>
+            <div class="summary-info">
+              <div class="summary-num">{{ summary.goals.completed }}/{{ summary.goals.total }}</div>
+              <div class="summary-label">Doelen</div>
+            </div>
+            <div class="summary-sub">
+              <strong>{{ summary.goals.active }}</strong> actief
+            </div>
+          </div>
+          <div class="card summary-card">
+            <div class="summary-icon">📔</div>
+            <div class="summary-info">
+              <div class="summary-num">{{ summary.journal.total }}</div>
+              <div class="summary-label">Dagboek entries</div>
+            </div>
+          </div>
+          <div class="card summary-card">
+            <div class="summary-icon">🧘</div>
+            <div class="summary-info">
+              <div class="summary-num">{{ summary.exercises.total }}</div>
+              <div class="summary-label">Oefeningen gedaan</div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (patterns) {
+        <div class="patterns-section">
+          <div class="card pattern-card">
+            <h2>Stemming per weekdag</h2>
+            @if (patterns.insights.bestDay) {
+              <div class="insights-row">
+                <div class="insight insight--best">
+                  <span class="insight-icon">🌟</span>
+                  <span>Beste dag: <strong>{{ patterns.insights.bestDay }}</strong></span>
+                </div>
+                @if (patterns.insights.worstDay) {
+                  <div class="insight insight--worst">
+                    <span class="insight-icon">💪</span>
+                    <span>Aandacht: <strong>{{ patterns.insights.worstDay }}</strong></span>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="weekday-chart">
+              @for (day of patterns.weekdayAverages; track day.day) {
+                <div class="day-bar">
+                  <div class="bar-container">
+                    <div
+                      class="bar mood-bar"
+                      [style.height.%]="(day.avgMood || 0) * 10"
+                      [title]="'Stemming: ' + day.avgMood"
+                    ></div>
+                    <div
+                      class="bar energy-bar"
+                      [style.height.%]="(day.avgEnergy || 0) * 10"
+                      [title]="'Energie: ' + day.avgEnergy"
+                    ></div>
+                  </div>
+                  <div class="day-label">{{ day.day.substring(0, 2) }}</div>
+                  @if (day.avgMood) {
+                    <div class="day-value">{{ day.avgMood }}</div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot mood-dot"></span> Stemming</span>
+              <span class="legend-item"><span class="legend-dot energy-dot"></span> Energie</span>
+            </div>
+          </div>
+
+          @if (patterns.correlation !== null) {
+            <div class="card correlation-card">
+              <h2>Stemming ↔ Energie correlatie</h2>
+              <div class="correlation-display">
+                <div class="correlation-value" [class]="getCorrelationClass(patterns.correlation)">
+                  {{ (patterns.correlation * 100).toFixed(0) }}%
+                </div>
+                <div class="correlation-label">{{ getCorrelationLabel(patterns.correlation) }}</div>
+              </div>
+              <p class="correlation-desc">
+                {{ getCorrelationDescription(patterns.correlation) }}
+              </p>
+              <div class="data-points">
+                Gebaseerd op <strong>{{ patterns.insights.totalDataPoints }}</strong> check-ins
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (patterns.trendData && patterns.trendData.length > 0) {
+          <div class="card trend-card">
+            <h2>30-daagse trend</h2>
+            <div class="trend-chart">
+              @for (point of patterns.trendData.slice(-14); track point.date) {
+                <div class="trend-point">
+                  <div class="trend-bars">
+                    <div class="trend-bar mood-bar-mini" [style.height.%]="point.mood * 10" [title]="'Stemming: ' + point.mood"></div>
+                    <div class="trend-bar energy-bar-mini" [style.height.%]="point.energy * 10" [title]="'Energie: ' + point.energy"></div>
+                  </div>
+                  <div class="trend-date">{{ point.date | date:'d/M' }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      @if (!loading && !patterns && !summary) {
+        <div class="empty-state card">
+          <div class="empty-icon">📊</div>
+          <h3>Geen data beschikbaar</h3>
+          <p>Maak meer check-ins om patronen te ontdekken.</p>
+        </div>
+      }
+    </div>

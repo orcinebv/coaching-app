@@ -1,0 +1,29 @@
+    <div class="emoji-picker">
+      <div class="emoji-categories">
+        @for (category of categories; track category.name) {
+          <button
+            class="category-btn"
+            [class.active]="activeCategory === category.name"
+            (click)="activeCategory = category.name"
+            type="button"
+          >
+            {{ category.emojis[0] }}
+          </button>
+        }
+      </div>
+      <div class="emoji-grid">
+        @for (category of categories; track category.name) {
+          @if (activeCategory === category.name) {
+            @for (emoji of category.emojis; track emoji) {
+              <button
+                class="emoji-btn"
+                (click)="selectEmoji(emoji)"
+                type="button"
+              >
+                {{ emoji }}
+              </button>
+            }
+          }
+        }
+      </div>
+    </div>
