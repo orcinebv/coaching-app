@@ -11,6 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -19,11 +20,23 @@ services:
     networks:
       - internal
 
+  redis:
+    image: redis:7-alpine
+    container_name: coaching-redis
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
   backend:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-      target: production
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/coaching-app-api:latest
     container_name: coaching-backend
     restart: always
     environment:
@@ -33,10 +46,22 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       N8N_WEBHOOK_URL: http://n8n:5678
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      REDIS_URL: redis://redis:6379
       NODE_ENV: production
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/coaching-app-web:latest
+    container_name: coaching-frontend
+    restart: always
+    environment:
+      BACKEND_URL: http://backend:3000
     networks:
       - internal
 
@@ -45,18 +70,25 @@ services:
     container_name: coaching-n8n
     restart: always
     environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: ${N8N_USER}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+      N8N_DEFAULT_USER_EMAIL: ${N8N_USER}
+      N8N_DEFAULT_USER_PASSWORD: ${N8N_PASSWORD}
       N8N_HOST: ${N8N_HOST}
       N8N_PORT: 5678
-      N8N_PROTOCOL: https
+      N8N_PROTOCOL: http
+      N8N_PATH: /n8n/
       WEBHOOK_URL: ${N8N_WEBHOOK_URL}
       GENERIC_TIMEZONE: Europe/Amsterdam
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
-      - backend
+      postgres:
+        condition: service_healthy
     networks:
       - internal
 
@@ -66,35 +98,20 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
       - frontend
-    networks:
-      - internal
-      - external
-
-  frontend:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      target: production
-    container_name: coaching-frontend
-    restart: always
-    environment:
-      NODE_ENV: production
+      - n8n
     networks:
       - internal
 
 volumes:
   postgres_data:
+  redis_data:
   n8n_data:
 
 networks:
   internal:
-    driver: bridge
-  external:
     driver: bridge
