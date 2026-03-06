@@ -52,6 +52,9 @@ services:
       N8N_COACHING_CHAT_WEBHOOK: ${N8N_COACHING_CHAT_WEBHOOK:-http://n8n:5678/webhook/coaching-chat}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: redis://redis:6379
+      POSTGRES_DB: coaching
+      POSTGRES_USER: coaching
+      POSTGRES_PASSWORD: coaching123
     ports:
       - "3000:3000"
     volumes:
