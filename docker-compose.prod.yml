@@ -40,6 +40,9 @@ services:
     container_name: coaching-backend
     restart: always
     environment:
+      POSTGRES_DB: coaching
+      POSTGRES_USER: coaching
+      POSTGRES_PASSWORD: coaching123
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000

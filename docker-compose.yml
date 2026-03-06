@@ -44,6 +44,9 @@ services:
     container_name: coaching-backend
     restart: unless-stopped
     environment:
+      POSTGRES_DB: coaching
+      POSTGRES_USER: coaching
+      POSTGRES_PASSWORD: coaching123
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
@@ -52,9 +55,6 @@ services:
       N8N_COACHING_CHAT_WEBHOOK: ${N8N_COACHING_CHAT_WEBHOOK:-http://n8n:5678/webhook/coaching-chat}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: redis://redis:6379
-      POSTGRES_DB: coaching
-      POSTGRES_USER: coaching
-      POSTGRES_PASSWORD: coaching123
     ports:
       - "3000:3000"
     volumes:
