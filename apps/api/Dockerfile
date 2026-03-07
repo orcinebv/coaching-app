@@ -1,5 +1,7 @@
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -14,6 +16,8 @@ RUN npx nx build api --configuration=production
 # ---- Production ----
 FROM node:20-alpine AS production
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY --from=builder /app/dist/apps/api ./
@@ -26,6 +30,8 @@ CMD ["sh", "-c", "node node_modules/.bin/prisma migrate deploy --schema=prisma/s
 
 # ---- Development ----
 FROM node:20-alpine AS development
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
