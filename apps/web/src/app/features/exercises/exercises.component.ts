@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { LucideAngularModule, Wind, Leaf, PersonStanding, Sparkles, Smile, Brain, Footprints, Zap, Star, Activity } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData, Wind, Leaf, PersonStanding, Sparkles, Smile, Brain, Footprints, Zap, Star, Activity } from 'lucide-angular';
 import { ExercisesStore } from '../../core/stores/exercises.store';
 import { Exercise } from '@coaching-app/shared/types';
 
@@ -26,7 +26,7 @@ export class ExercisesComponent implements OnInit {
   readonly StarIcon = Star;
   readonly ActivityIcon = Activity;
 
-  private readonly categoryIconMap: Record<string, unknown> = {
+  private readonly categoryIconMap: Record<string, LucideIconData> = {
     breathing: Wind,
     grounding: Leaf,
     mindfulness: PersonStanding,
@@ -35,14 +35,14 @@ export class ExercisesComponent implements OnInit {
     cognitive: Brain,
     movement: Footprints,
   };
-  private readonly fallbackCategoryIcon = Zap;
+  private readonly fallbackCategoryIcon: LucideIconData = Zap;
 
   ngOnInit(): void {
     this.exercisesStore.loadExercises();
     this.exercisesStore.loadStats();
   }
 
-  getCategoryIcon(cat: string): unknown {
+  getCategoryIcon(cat: string): LucideIconData {
     return this.categoryIconMap[cat] ?? this.fallbackCategoryIcon;
   }
 

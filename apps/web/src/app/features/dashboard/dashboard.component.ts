@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, Trophy, BarChart2, TrendingUp, Zap, Lightbulb, MessageCircle, Star, ThumbsUp, ThumbsDown, X } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData, Trophy, BarChart2, TrendingUp, Zap, Lightbulb, MessageCircle, Star, ThumbsUp, ThumbsDown, X } from 'lucide-angular';
 import { CheckInStore } from '../../core/stores/checkin.store';
 import { ChatStore } from '../../core/stores/chat.store';
 import { PromptsStore } from '../../core/stores/prompts.store';
@@ -26,13 +26,13 @@ export class DashboardComponent implements OnInit {
   readonly ThumbsDownIcon = ThumbsDown;
   readonly XIcon = X;
 
-  private readonly insightIconMap: Record<string, unknown> = {
+  private readonly insightIconMap: Record<string, LucideIconData> = {
     milestone: Trophy,
     pattern: BarChart2,
     comparison: TrendingUp,
     encouragement: Zap,
   };
-  readonly FallbackInsightIcon = Lightbulb;
+  readonly FallbackInsightIcon: LucideIconData = Lightbulb;
   readonly chatStore = inject(ChatStore);
   readonly promptsStore = inject(PromptsStore);
   readonly recommendationsStore = inject(RecommendationsStore);
@@ -80,7 +80,7 @@ export class DashboardComponent implements OnInit {
     return labels[type] || type;
   }
 
-  getInsightIcon(type: string): unknown {
+  getInsightIcon(type: string): LucideIconData {
     return this.insightIconMap[type] ?? this.FallbackInsightIcon;
   }
 }
