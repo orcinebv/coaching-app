@@ -38,7 +38,6 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.0.0",
     "@ngrx/signals": "^21.0.1",
-    "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^4.16.2",
     "@types/nodemailer": "^7.0.11",
     "bcrypt": "^6.0.0",
