@@ -14,7 +14,7 @@
       @if (summary) {
         <div class="summary-grid">
           <div class="card summary-card">
-            <div class="summary-icon">📊</div>
+            <div class="summary-icon"><lucide-icon [img]="BarChart2Icon" [size]="24"></lucide-icon></div>
             <div class="summary-info">
               <div class="summary-num">{{ summary.checkIns.total }}</div>
               <div class="summary-label">Check-ins</div>
@@ -24,7 +24,7 @@
             </div>
           </div>
           <div class="card summary-card">
-            <div class="summary-icon">🎯</div>
+            <div class="summary-icon"><lucide-icon [img]="TargetIcon" [size]="24"></lucide-icon></div>
             <div class="summary-info">
               <div class="summary-num">{{ summary.goals.completed }}/{{ summary.goals.total }}</div>
               <div class="summary-label">Doelen</div>
@@ -34,14 +34,14 @@
             </div>
           </div>
           <div class="card summary-card">
-            <div class="summary-icon">📔</div>
+            <div class="summary-icon"><lucide-icon [img]="BookOpenIcon" [size]="24"></lucide-icon></div>
             <div class="summary-info">
               <div class="summary-num">{{ summary.journal.total }}</div>
               <div class="summary-label">Dagboek entries</div>
             </div>
           </div>
           <div class="card summary-card">
-            <div class="summary-icon">🧘</div>
+            <div class="summary-icon"><lucide-icon [img]="ActivityIcon" [size]="24"></lucide-icon></div>
             <div class="summary-info">
               <div class="summary-num">{{ summary.exercises.total }}</div>
               <div class="summary-label">Oefeningen gedaan</div>
@@ -57,12 +57,12 @@
             @if (patterns.insights.bestDay) {
               <div class="insights-row">
                 <div class="insight insight--best">
-                  <span class="insight-icon">🌟</span>
+                  <span class="insight-icon"><lucide-icon [img]="StarIcon" [size]="16"></lucide-icon></span>
                   <span>Beste dag: <strong>{{ patterns.insights.bestDay }}</strong></span>
                 </div>
                 @if (patterns.insights.worstDay) {
                   <div class="insight insight--worst">
-                    <span class="insight-icon">💪</span>
+                    <span class="insight-icon"><lucide-icon [img]="ZapIcon" [size]="16"></lucide-icon></span>
                     <span>Aandacht: <strong>{{ patterns.insights.worstDay }}</strong></span>
                   </div>
                 }
@@ -137,7 +137,7 @@
 
       @if (!loading && !patterns && !summary) {
         <div class="empty-state card">
-          <div class="empty-icon">📊</div>
+          <div class="empty-icon"><lucide-icon [img]="BarChart2Icon" [size]="40"></lucide-icon></div>
           <h3>Geen data beschikbaar</h3>
           <p>Maak meer check-ins om patronen te ontdekken.</p>
         </div>

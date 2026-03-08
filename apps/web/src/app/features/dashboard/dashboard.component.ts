@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, Trophy, BarChart2, TrendingUp, Zap, Lightbulb, MessageCircle, Star, ThumbsUp, ThumbsDown, X } from 'lucide-angular';
 import { CheckInStore } from '../../core/stores/checkin.store';
 import { ChatStore } from '../../core/stores/chat.store';
 import { PromptsStore } from '../../core/stores/prompts.store';
@@ -12,12 +13,26 @@ import { MoodChartComponent } from './mood-chart.component';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, StatsCardComponent, MoodChartComponent],
+  imports: [CommonModule, RouterLink, StatsCardComponent, MoodChartComponent, LucideAngularModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit {
   readonly checkInStore = inject(CheckInStore);
+
+  readonly MessageCircleIcon = MessageCircle;
+  readonly StarIcon = Star;
+  readonly ThumbsUpIcon = ThumbsUp;
+  readonly ThumbsDownIcon = ThumbsDown;
+  readonly XIcon = X;
+
+  private readonly insightIconMap: Record<string, unknown> = {
+    milestone: Trophy,
+    pattern: BarChart2,
+    comparison: TrendingUp,
+    encouragement: Zap,
+  };
+  readonly FallbackInsightIcon = Lightbulb;
   readonly chatStore = inject(ChatStore);
   readonly promptsStore = inject(PromptsStore);
   readonly recommendationsStore = inject(RecommendationsStore);
@@ -65,13 +80,7 @@ export class DashboardComponent implements OnInit {
     return labels[type] || type;
   }
 
-  getInsightIcon(type: string): string {
-    const icons: Record<string, string> = {
-      milestone: '🏆',
-      pattern: '📊',
-      comparison: '📈',
-      encouragement: '💪',
-    };
-    return icons[type] || '💡';
+  getInsightIcon(type: string): unknown {
+    return this.insightIconMap[type] ?? this.FallbackInsightIcon;
   }
 }

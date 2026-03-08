@@ -28,7 +28,7 @@
         <div class="card form-card">
           <div class="card-header">
             <h2>Nieuw SMART-doel</h2>
-            <button class="btn-close" (click)="cancelForm()">✕</button>
+            <button class="btn-close" (click)="cancelForm()"><lucide-icon [img]="XIcon" [size]="16"></lucide-icon></button>
           </div>
 
           @if (successMessage) {
@@ -152,7 +152,7 @@
         } @empty {
           @if (!goalsStore.loading()) {
             <div class="empty-state card">
-              <div class="empty-icon">🎯</div>
+              <div class="empty-icon"><lucide-icon [img]="TargetIcon" [size]="40"></lucide-icon></div>
               <h3>Nog geen doelen</h3>
               <p>Stel je eerste SMART-doel in om je groei bij te houden.</p>
               <button class="btn btn-primary" (click)="showForm = true">Eerste doel instellen</button>

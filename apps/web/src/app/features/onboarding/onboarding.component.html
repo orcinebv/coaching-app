@@ -8,7 +8,7 @@
 
         <!-- Step 1: Welcome -->
         <div *ngIf="currentStep() === 1" class="step-content">
-          <div class="step-icon">👋</div>
+          <div class="step-icon"><lucide-icon [img]="HandIcon" [size]="40"></lucide-icon></div>
           <h2>Welkom bij jouw coaching app!</h2>
           <p>We helpen je stap voor stap op weg. Dit duurt maar 2 minuten.</p>
           <div class="form-group">
@@ -19,7 +19,7 @@
 
         <!-- Step 2: Focus areas -->
         <div *ngIf="currentStep() === 2" class="step-content">
-          <div class="step-icon">🎯</div>
+          <div class="step-icon"><lucide-icon [img]="TargetIcon" [size]="40"></lucide-icon></div>
           <h2>Wat wil je verbeteren?</h2>
           <p>Kies één of meer focusgebieden (je kunt dit later wijzigen)</p>
           <div class="focus-grid">
@@ -29,7 +29,7 @@
               [class.selected]="selectedAreas().includes(area.id)"
               (click)="toggleArea(area.id)"
             >
-              <span class="focus-icon">{{ area.icon }}</span>
+              <span class="focus-icon"><lucide-icon [img]="area.icon" [size]="20"></lucide-icon></span>
               <span class="focus-label">{{ area.label }}</span>
             </div>
           </div>
@@ -37,30 +37,30 @@
 
         <!-- Step 3: First check-in -->
         <div *ngIf="currentStep() === 3" class="step-content">
-          <div class="step-icon">📊</div>
+          <div class="step-icon"><lucide-icon [img]="BarChart2Icon" [size]="40"></lucide-icon></div>
           <h2>Hoe voel je je nu?</h2>
           <p>Doe je eerste check-in om een startpunt te bepalen</p>
           <div class="checkin-group">
             <label>Stemming ({{ moodScore() }}/10)</label>
             <input type="range" min="1" max="10" [(ngModel)]="moodScore" class="range-input" />
-            <div class="range-labels"><span>😞 Slecht</span><span>😄 Geweldig</span></div>
+            <div class="range-labels"><span>Slecht</span><span>Geweldig</span></div>
           </div>
           <div class="checkin-group">
             <label>Energie ({{ energyScore() }}/10)</label>
             <input type="range" min="1" max="10" [(ngModel)]="energyScore" class="range-input" />
-            <div class="range-labels"><span>😴 Laag</span><span>⚡ Hoog</span></div>
+            <div class="range-labels"><span>Laag</span><span>Hoog</span></div>
           </div>
         </div>
 
         <!-- Step 4: Done! -->
         <div *ngIf="currentStep() === 4" class="step-content center">
-          <div class="step-icon big">🎉</div>
+          <div class="step-icon big"><lucide-icon [img]="CheckCircle2Icon" [size]="56"></lucide-icon></div>
           <h2>Je bent klaar, {{ userName }}!</h2>
           <p>Je profiel is ingesteld. Ga naar je dashboard om te beginnen.</p>
           <div class="summary">
-            <div class="summary-item">✅ Naam ingesteld</div>
-            <div class="summary-item">✅ Focusgebieden gekozen</div>
-            <div class="summary-item">✅ Eerste check-in gedaan</div>
+            <div class="summary-item"><lucide-icon [img]="CheckCircle2Icon" [size]="16"></lucide-icon> Naam ingesteld</div>
+            <div class="summary-item"><lucide-icon [img]="CheckCircle2Icon" [size]="16"></lucide-icon> Focusgebieden gekozen</div>
+            <div class="summary-item"><lucide-icon [img]="CheckCircle2Icon" [size]="16"></lucide-icon> Eerste check-in gedaan</div>
           </div>
         </div>
 

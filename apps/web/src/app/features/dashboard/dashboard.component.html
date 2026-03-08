@@ -45,12 +45,12 @@
         <div class="prompt-widget card" [class.skipped]="prompt.skipped">
           <div class="prompt-header">
             <div class="prompt-label">
-              <span class="prompt-icon">💭</span>
+              <span class="prompt-icon"><lucide-icon [img]="MessageCircleIcon" [size]="16"></lucide-icon></span>
               Dagelijkse coaching vraag
               <span class="prompt-type-badge">{{ getPromptTypeLabel(prompt.type) }}</span>
             </div>
             @if (!prompt.skipped) {
-              <button class="btn-icon" title="Overslaan" (click)="skipPrompt(prompt.id)">✕</button>
+              <button class="btn-icon" title="Overslaan" (click)="skipPrompt(prompt.id)"><lucide-icon [img]="XIcon" [size]="14"></lucide-icon></button>
             }
           </div>
           <p class="prompt-text">{{ prompt.prompt }}</p>
@@ -60,13 +60,13 @@
               <div class="prompt-rating">
                 <span class="rating-label">Goede vraag?</span>
                 @for (star of [1,2,3,4,5]; track star) {
-                  <button class="star-btn" (click)="ratePrompt(prompt.id, star)">★</button>
+                  <button class="star-btn" (click)="ratePrompt(prompt.id, star)"><lucide-icon [img]="StarIcon" [size]="14"></lucide-icon></button>
                 }
               </div>
             </div>
           }
           @if (prompt.rating) {
-            <div class="prompt-rated">Bedankt voor je feedback! ⭐ {{ prompt.rating }}/5</div>
+            <div class="prompt-rated">Bedankt voor je feedback! <lucide-icon [img]="StarIcon" [size]="14"></lucide-icon> {{ prompt.rating }}/5</div>
           }
         </div>
       }
@@ -93,7 +93,7 @@
               <div class="insights-list">
                 @for (insight of insightsStore.insights().slice(0, 3); track insight.id) {
                   <div class="insight-item" [class.unread]="!insight.isRead" (click)="insightsStore.markRead(insight.id)">
-                    <span class="insight-icon">{{ getInsightIcon(insight.type) }}</span>
+                    <span class="insight-icon"><lucide-icon [img]="getInsightIcon(insight.type)" [size]="18"></lucide-icon></span>
                     <div>
                       <div class="insight-title">{{ insight.title }}</div>
                       <div class="insight-content">{{ insight.content }}</div>
@@ -136,9 +136,9 @@
                       }
                     </div>
                     <div class="reco-actions">
-                      <button class="btn-icon" title="Nuttig" (click)="recoFeedback(reco.id, true)">👍</button>
-                      <button class="btn-icon" title="Niet nuttig" (click)="recoFeedback(reco.id, false)">👎</button>
-                      <button class="btn-icon" title="Verwijderen" (click)="dismissReco(reco.id)">✕</button>
+                      <button class="btn-icon" title="Nuttig" (click)="recoFeedback(reco.id, true)"><lucide-icon [img]="ThumbsUpIcon" [size]="14"></lucide-icon></button>
+                      <button class="btn-icon" title="Niet nuttig" (click)="recoFeedback(reco.id, false)"><lucide-icon [img]="ThumbsDownIcon" [size]="14"></lucide-icon></button>
+                      <button class="btn-icon" title="Verwijderen" (click)="dismissReco(reco.id)"><lucide-icon [img]="XIcon" [size]="14"></lucide-icon></button>
                     </div>
                   </div>
                 }

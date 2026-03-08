@@ -1,13 +1,14 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { LucideAngularModule, Wind, Leaf, PersonStanding, Sparkles, Smile, Brain, Footprints, Zap, Star, Activity } from 'lucide-angular';
 import { ExercisesStore } from '../../core/stores/exercises.store';
 import { Exercise } from '@coaching-app/shared/types';
 
 @Component({
   selector: 'app-exercises',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule],
   templateUrl: './exercises.component.html',
   styleUrls: ['./exercises.component.scss'],
 })
@@ -22,22 +23,27 @@ export class ExercisesComponent implements OnInit {
   isCompleting = false;
   completedId: string | null = null;
 
+  readonly StarIcon = Star;
+  readonly ActivityIcon = Activity;
+
+  private readonly categoryIconMap: Record<string, unknown> = {
+    breathing: Wind,
+    grounding: Leaf,
+    mindfulness: PersonStanding,
+    visualization: Sparkles,
+    relaxation: Smile,
+    cognitive: Brain,
+    movement: Footprints,
+  };
+  private readonly fallbackCategoryIcon = Zap;
+
   ngOnInit(): void {
     this.exercisesStore.loadExercises();
     this.exercisesStore.loadStats();
   }
 
-  getCategoryIcon(cat: string): string {
-    const icons: Record<string, string> = {
-      breathing: '🫁',
-      grounding: '🌱',
-      mindfulness: '🧘',
-      visualization: '✨',
-      relaxation: '😌',
-      cognitive: '🧠',
-      movement: '🚶',
-    };
-    return icons[cat] || '💪';
+  getCategoryIcon(cat: string): unknown {
+    return this.categoryIconMap[cat] ?? this.fallbackCategoryIcon;
   }
 
   getCategoryLabel(cat: string): string {

@@ -3,21 +3,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { LucideAngularModule, Leaf, Zap, Heart, Dumbbell, Lightbulb, Rocket, Hand, Target, BarChart2, CheckCircle2, Frown, Smile, Moon } from 'lucide-angular';
 import { environment } from '../../../environments/environment';
 
 const FOCUS_AREAS = [
-  { id: 'stress', label: 'Stress & Ontspanning', icon: '🧘' },
-  { id: 'productivity', label: 'Productiviteit', icon: '⚡' },
-  { id: 'relationships', label: 'Relaties', icon: '❤️' },
-  { id: 'health', label: 'Gezondheid', icon: '💪' },
-  { id: 'mindset', label: 'Mindset', icon: '🧠' },
-  { id: 'career', label: 'Carrière', icon: '🚀' },
+  { id: 'stress', label: 'Stress & Ontspanning', icon: Leaf },
+  { id: 'productivity', label: 'Productiviteit', icon: Zap },
+  { id: 'relationships', label: 'Relaties', icon: Heart },
+  { id: 'health', label: 'Gezondheid', icon: Dumbbell },
+  { id: 'mindset', label: 'Mindset', icon: Lightbulb },
+  { id: 'career', label: 'Carrière', icon: Rocket },
 ];
 
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './onboarding.component.html',
   styleUrls: ['./onboarding.component.scss'],
 })
@@ -29,6 +30,15 @@ export class OnboardingComponent {
   moodScore = signal(5);
   energyScore = signal(5);
   focusAreas = FOCUS_AREAS;
+
+  readonly HandIcon = Hand;
+  readonly TargetIcon = Target;
+  readonly BarChart2Icon = BarChart2;
+  readonly CheckCircle2Icon = CheckCircle2;
+  readonly FrownIcon = Frown;
+  readonly SmileIcon = Smile;
+  readonly MoonIcon = Moon;
+  readonly ZapIcon = Zap;
 
   private router = inject(Router);
   private http = inject(HttpClient);

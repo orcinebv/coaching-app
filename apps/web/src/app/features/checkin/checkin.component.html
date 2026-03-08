@@ -16,8 +16,7 @@
               <div class="slider-header">
                 <label>Stemming</label>
                 <span class="slider-display">
-                  <span class="slider-emoji">{{ getMoodEmoji(checkinForm.get('mood')?.value) }}</span>
-                  <span class="slider-value">{{ checkinForm.get('mood')?.value }}/10</span>
+                  <span class="slider-value" [class]="getMoodClass(checkinForm.get('mood')?.value)">{{ checkinForm.get('mood')?.value }}/10</span>
                 </span>
               </div>
               <input type="range" min="1" max="10" formControlName="mood" class="range-slider mood-slider" />
@@ -31,8 +30,7 @@
               <div class="slider-header">
                 <label>Energie</label>
                 <span class="slider-display">
-                  <span class="slider-emoji">{{ getEnergyEmoji(checkinForm.get('energy')?.value) }}</span>
-                  <span class="slider-value">{{ checkinForm.get('energy')?.value }}/10</span>
+                  <span class="slider-value" [class]="getMoodClass(checkinForm.get('energy')?.value)">{{ checkinForm.get('energy')?.value }}/10</span>
                 </span>
               </div>
               <input type="range" min="1" max="10" formControlName="energy" class="range-slider energy-slider" />
@@ -66,7 +64,7 @@
                   <div class="slider-header">
                     <label>Slaapuren</label>
                     <span class="slider-display">
-                      <span class="slider-emoji">{{ getSleepEmoji(checkinForm.get('sleepHours')?.value) }}</span>
+                      <lucide-icon [img]="MoonIcon" [size]="14"></lucide-icon>
                       <span class="slider-value">{{ checkinForm.get('sleepHours')?.value }}u</span>
                     </span>
                   </div>
@@ -89,7 +87,7 @@
                   <div class="slider-header">
                     <label>Glazen water</label>
                     <span class="slider-display">
-                      <span class="slider-emoji">💧</span>
+                      <lucide-icon [img]="DropletsIcon" [size]="14"></lucide-icon>
                       <span class="slider-value">{{ checkinForm.get('waterGlasses')?.value }}</span>
                     </span>
                   </div>
@@ -101,7 +99,7 @@
                   <div class="slider-header">
                     <label>Beweging (min)</label>
                     <span class="slider-display">
-                      <span class="slider-emoji">🏃</span>
+                      <lucide-icon [img]="ActivityIcon" [size]="14"></lucide-icon>
                       <span class="slider-value">{{ checkinForm.get('activityMinutes')?.value }}min</span>
                     </span>
                   </div>
@@ -113,8 +111,7 @@
                   <div class="slider-header">
                     <label>Stressniveau</label>
                     <span class="slider-display">
-                      <span class="slider-emoji">{{ getStressEmoji(checkinForm.get('stressLevel')?.value) }}</span>
-                      <span class="slider-value">{{ checkinForm.get('stressLevel')?.value }}/10</span>
+                      <span class="slider-value" [class]="getMoodClass(10 - checkinForm.get('stressLevel')?.value)">{{ checkinForm.get('stressLevel')?.value }}/10</span>
                     </span>
                   </div>
                   <input type="range" min="1" max="10" formControlName="stressLevel" class="range-slider health-slider" />
@@ -144,7 +141,6 @@
                 </div>
                 <div class="history-metrics">
                   <div class="history-metric">
-                    <span class="metric-emoji">{{ getMoodEmoji(checkin.mood) }}</span>
                     <div class="metric-info">
                       <span class="metric-label">Stemming</span>
                       <div class="metric-bar">
@@ -154,7 +150,6 @@
                     </div>
                   </div>
                   <div class="history-metric">
-                    <span class="metric-emoji">{{ getEnergyEmoji(checkin.energy) }}</span>
                     <div class="metric-info">
                       <span class="metric-label">Energie</span>
                       <div class="metric-bar">
@@ -167,13 +162,13 @@
                 @if (checkin.sleepHours !== null && checkin.sleepHours !== undefined || checkin.waterGlasses !== null && checkin.waterGlasses !== undefined || checkin.activityMinutes !== null && checkin.activityMinutes !== undefined) {
                   <div class="health-chips">
                     @if (checkin.sleepHours !== null && checkin.sleepHours !== undefined) {
-                      <span class="health-chip">😴 {{ checkin.sleepHours }}u slaap</span>
+                      <span class="health-chip"><lucide-icon [img]="MoonIcon" [size]="12"></lucide-icon> {{ checkin.sleepHours }}u slaap</span>
                     }
                     @if (checkin.waterGlasses !== null && checkin.waterGlasses !== undefined) {
-                      <span class="health-chip">💧 {{ checkin.waterGlasses }} glazen</span>
+                      <span class="health-chip"><lucide-icon [img]="DropletsIcon" [size]="12"></lucide-icon> {{ checkin.waterGlasses }} glazen</span>
                     }
                     @if (checkin.activityMinutes !== null && checkin.activityMinutes !== undefined) {
-                      <span class="health-chip">🏃 {{ checkin.activityMinutes }}min</span>
+                      <span class="health-chip"><lucide-icon [img]="ActivityIcon" [size]="12"></lucide-icon> {{ checkin.activityMinutes }}min</span>
                     }
                   </div>
                 }
@@ -190,7 +185,7 @@
               </div>
             } @empty {
               <div class="card empty-state-base">
-                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-icon"><lucide-icon [img]="ClipboardListIcon" [size]="32"></lucide-icon></div>
                 <div class="empty-state-title">Nog geen check-ins</div>
                 <div class="empty-state-desc">Maak je eerste check-in hierboven aan!</div>
               </div>

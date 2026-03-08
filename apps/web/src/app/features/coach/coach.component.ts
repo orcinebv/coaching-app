@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, AlertTriangle } from 'lucide-angular';
 import { environment } from '../../../environments/environment';
 
 interface Coachee {
@@ -26,11 +27,12 @@ interface CoacheeOverview {
 @Component({
   selector: 'app-coach',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './coach.component.html',
   styleUrls: ['./coach.component.scss'],
 })
 export class CoachComponent implements OnInit {
+  readonly AlertTriangleIcon = AlertTriangle;
   coachees = signal<Coachee[]>([]);
   selectedCoachee = signal<Coachee | null>(null);
   selectedOverview = signal<CoacheeOverview | null>(null);

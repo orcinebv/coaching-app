@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule, BarChart2, Target, BookOpen, Activity, Star, Zap } from 'lucide-angular';
 import { ApiService } from '../../core/services/api.service';
 import { MoodPatterns, ProgressSummary } from '@coaching-app/shared/types';
 import { firstValueFrom } from 'rxjs';
@@ -7,13 +8,20 @@ import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   templateUrl: './analytics.component.html',
   styleUrls: ['./analytics.component.scss'],
 })
 export class AnalyticsComponent implements OnInit {
   private api = inject(ApiService);
   private cdr = inject(ChangeDetectorRef);
+
+  readonly BarChart2Icon = BarChart2;
+  readonly TargetIcon = Target;
+  readonly BookOpenIcon = BookOpen;
+  readonly ActivityIcon = Activity;
+  readonly StarIcon = Star;
+  readonly ZapIcon = Zap;
 
   loading = false;
   patterns: MoodPatterns | null = null;

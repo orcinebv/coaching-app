@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, MessageCircle } from 'lucide-angular';
 import { JournalStore } from '../../core/stores/journal.store';
 import { JournalEntry } from '@coaching-app/shared/types';
 
@@ -13,13 +14,14 @@ interface EmotionCategory {
 @Component({
   selector: 'app-journal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './journal.component.html',
   styleUrls: ['./journal.component.scss'],
 })
 export class JournalComponent implements OnInit {
   readonly journalStore = inject(JournalStore);
   private cdr = inject(ChangeDetectorRef);
+  readonly MessageCircleIcon = MessageCircle;
 
   // New entry form
   step = signal<1 | 2 | 3 | 4>(1);

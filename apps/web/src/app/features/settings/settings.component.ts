@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { LucideAngularModule, Users, Zap, Search } from 'lucide-angular';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { firstValueFrom } from 'rxjs';
@@ -24,7 +25,7 @@ interface CoachingSettings {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
 })
@@ -59,9 +60,9 @@ export class SettingsComponent implements OnInit {
   };
 
   coachingStyles = [
-    { value: 'supportive', label: 'Ondersteunend', icon: '🤝', desc: 'Warm en bemoedigend' },
-    { value: 'challenging', label: 'Uitdagend', icon: '🚀', desc: 'Ambitieus en direct' },
-    { value: 'analytical', label: 'Analytisch', icon: '🔍', desc: 'Data-gedreven en logisch' },
+    { value: 'supportive', label: 'Ondersteunend', icon: Users, desc: 'Warm en bemoedigend' },
+    { value: 'challenging', label: 'Uitdagend', icon: Zap, desc: 'Ambitieus en direct' },
+    { value: 'analytical', label: 'Analytisch', icon: Search, desc: 'Data-gedreven en logisch' },
   ];
 
   focusAreaOptions = [

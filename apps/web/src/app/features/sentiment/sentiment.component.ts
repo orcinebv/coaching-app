@@ -1,17 +1,19 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, AlertTriangle } from 'lucide-angular';
 import { SentimentStore } from '../../core/stores/sentiment.store';
 
 @Component({
   selector: 'app-sentiment',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, LucideAngularModule],
   templateUrl: './sentiment.component.html',
   styleUrls: ['./sentiment.component.scss'],
 })
 export class SentimentComponent implements OnInit {
   readonly store = inject(SentimentStore);
+  readonly AlertTriangleIcon = AlertTriangle;
   selectedDays = 30;
 
   ngOnInit(): void {

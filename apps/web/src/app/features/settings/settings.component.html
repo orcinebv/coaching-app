@@ -171,7 +171,7 @@
                   class="style-option"
                   [class.selected]="coachingSettings.coachingStyle === style.value"
                   (click)="coachingSettings.coachingStyle = style.value">
-                  <span class="style-icon">{{ style.icon }}</span>
+                  <span class="style-icon"><lucide-icon [img]="style.icon" [size]="20"></lucide-icon></span>
                   <span class="style-name">{{ style.label }}</span>
                   <span class="style-desc">{{ style.desc }}</span>
                 </button>

@@ -1,12 +1,13 @@
 import { Component, OnInit, inject, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { LucideAngularModule, Moon, Droplets, Activity, ClipboardList } from 'lucide-angular';
 import { CheckInStore } from '../../core/stores/checkin.store';
 
 @Component({
   selector: 'app-checkin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './checkin.component.html',
   styleUrls: ['./checkin.component.scss'],
 })
@@ -18,6 +19,11 @@ export class CheckinComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   showHealthSection = signal(false);
+
+  readonly MoonIcon = Moon;
+  readonly DropletsIcon = Droplets;
+  readonly ActivityIcon = Activity;
+  readonly ClipboardListIcon = ClipboardList;
 
   constructor(private fb: FormBuilder) {
     this.checkinForm = this.fb.group({
@@ -37,36 +43,10 @@ export class CheckinComponent implements OnInit {
     this.checkInStore.loadCheckIns();
   }
 
-  getMoodEmoji(value: number): string {
-    if (value <= 2) return '\u{1F622}';
-    if (value <= 4) return '\u{1F615}';
-    if (value <= 6) return '\u{1F610}';
-    if (value <= 8) return '\u{1F60A}';
-    return '\u{1F604}';
-  }
-
-  getEnergyEmoji(value: number): string {
-    if (value <= 2) return '\u{1F634}';
-    if (value <= 4) return '\u{1F971}';
-    if (value <= 6) return '\u{1F610}';
-    if (value <= 8) return '\u{26A1}';
-    return '\u{1F525}';
-  }
-
-  getSleepEmoji(hours: number): string {
-    if (!hours && hours !== 0) return '\u{1F634}';
-    if (hours < 5) return '\u{1F635}';
-    if (hours < 7) return '\u{1F62A}';
-    if (hours <= 9) return '\u{1F634}';
-    return '\u{1F6CC}';
-  }
-
-  getStressEmoji(level: number): string {
-    if (!level) return '\u{1F60C}';
-    if (level <= 3) return '\u{1F60C}';
-    if (level <= 5) return '\u{1F610}';
-    if (level <= 7) return '\u{1F630}';
-    return '\u{1F631}';
+  getMoodClass(value: number): string {
+    if (value <= 3) return 'level-low';
+    if (value <= 6) return 'level-mid';
+    return 'level-high';
   }
 
   async onSubmit(): Promise<void> {

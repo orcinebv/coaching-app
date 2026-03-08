@@ -1,18 +1,22 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { LucideAngularModule, X, Target } from 'lucide-angular';
 import { GoalsStore } from '../../core/stores/goals.store';
 
 @Component({
   selector: 'app-goals',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './goals.component.html',
   styleUrls: ['./goals.component.scss'],
 })
 export class GoalsComponent implements OnInit {
   readonly goalsStore = inject(GoalsStore);
   private fb = inject(FormBuilder);
+
+  readonly XIcon = X;
+  readonly TargetIcon = Target;
   private cdr = inject(ChangeDetectorRef);
 
   showForm = false;

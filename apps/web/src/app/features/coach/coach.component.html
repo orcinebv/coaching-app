@@ -6,7 +6,7 @@
 
       <!-- Crisis Alerts Banner -->
       <div *ngIf="crisisAlerts().length > 0" class="crisis-banner">
-        <span class="crisis-icon">⚠️</span>
+        <span class="crisis-icon"><lucide-icon [img]="AlertTriangleIcon" [size]="18"></lucide-icon></span>
         <strong>Let op:</strong> {{ crisisAlerts().length }} coachee(s) tonen crisissignalen.
         <span *ngFor="let alert of crisisAlerts(); let last = last">
           {{ alert.user.name }}<span *ngIf="!last">, </span>
@@ -54,7 +54,7 @@
 
           <!-- Alert -->
           <div *ngIf="selectedOverview()!.stats.hasCrisisAlert" class="detail-crisis-alert">
-            ⚠️ Crisissignaal gedetecteerd – volg deze coachee actief op
+            <lucide-icon [img]="AlertTriangleIcon" [size]="16"></lucide-icon> Crisissignaal gedetecteerd – volg deze coachee actief op
           </div>
 
           <!-- Stats -->
