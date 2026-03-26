@@ -21,10 +21,19 @@ jobs:
         include:
           - service: api
             dockerfile: apps/api/Dockerfile
+            context: .
+            target: production
             image_suffix: api
           - service: web
             dockerfile: apps/web/Dockerfile
+            context: .
+            target: production
             image_suffix: web
+          - service: n8n
+            dockerfile: docker/n8n/Dockerfile
+            context: docker/n8n
+            target: ""
+            image_suffix: n8n
     steps:
       - uses: actions/checkout@v4
 
@@ -46,9 +55,9 @@ jobs:
 
       - uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          target: production
+          target: ${{ matrix.target }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

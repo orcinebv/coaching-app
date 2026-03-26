@@ -116,6 +116,7 @@ services:
       EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "true"
       N8N_LOG_LEVEL: info
       N8N_LOG_OUTPUT: console
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_CREDENTIALS_OVERWRITE_DATA: '{"OpenAI API":{"apiKey":"${OPENAI_API_KEY}","url":"https://api.openai.com"}}'
     ports:
       - "5678:5678"
