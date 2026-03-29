@@ -47,7 +47,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
       FRONTEND_URL: ${FRONTEND_URL}
-      N8N_WEBHOOK_URL: http://n8n:5678
+      N8N_WEBHOOK_URL: http://n8n:5678/n8n
+      N8N_COACHING_CHAT_WEBHOOK: http://n8n:5678/n8n/webhook/coaching-chat
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
